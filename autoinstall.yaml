@@ -13,40 +13,36 @@ autoinstall:
     
     # --- Configuração de Armazenamento com Criptografia LVM ---
     storage:
-        # Define que a instalação deve usar o disco 'sda' e criptografá-lo
         config:
             - id: disk-sda
               type: disk
               name: sda
               match:
-                # Altere este valor se o disco de instalação não for 'sda'
+                # Se o seu disco for NVMe, mude 'sda' para 'nvme0n1'
                 uuid: 
               ptable: gpt
               wipe: superblock-recursive
             
-            # 1. Partição de boot (necessária para LVM criptografado)
+            # 1. Partição /boot
             - id: partition-0
               type: partition
               disk: disk-sda
-              size: 536870912 # 512 MB para /boot (não criptografado)
+              size: 536870912 # 512 MB
               flag: boot
               grub_device: true
             
-            # 2. Partição principal (será criptografada)
+            # 2. Partição principal (o restante do disco)
             - id: partition-1
               type: partition
               disk: disk-sda
-              size: 0 # O restante do disco
+              size: 0 
               
             # 3. Criptografia da partição principal (LUKS)
             - id: encryption-0
               type: encrypt
               volume: partition-1
-              # IMPORTANTE: A senha de criptografia DEVE ser um hash.
-              # Use um gerador de hash (como 'openssl passwd -6') e substitua o valor abaixo.
-              # Este valor 'password' é um placeholder. O instalador rejeitará a senha em texto puro.
-              password: '$6$dEsPnw6B0uPMsJtg$R8DQ9KoMZIR5/RW690CIyXcx/qQWQPBu1Ov0u9ctiWvibXbQB4vgPDbMDpPw3mNx08HNhL9Or3F9RL/rxiQJK0
-' # **SUBSTITUA PELO HASH DA SENHA REAL**
+              # CORREÇÃO CRÍTICA: O hash deve estar em UMA ÚNICA LINHA!
+              password: '$6$dEsPnw6B0uPMsJtg$R8DQ9KoMZIR5/RW690CIyXcx/qQWQPBu1Ov0u9ctiWvibXbQB4vgPDbMDpPw3mNx08HNhL9Or3F9RL/rxiQJK0'
               
             # 4. Volume Group LVM sobre a partição criptografada
             - id: volgroup-0
@@ -65,11 +61,11 @@ autoinstall:
             # 6. Formatação e Montagem
             - id: format-0
               type: format
-              volume: partition-0 # Partição /boot
+              volume: partition-0
               fstype: ext4
             - id: format-1
               type: format
-              volume: logicalvolume-0 # Partição raiz criptografada
+              volume: logicalvolume-0
               fstype: ext4
             
             - id: mount-0
@@ -81,7 +77,7 @@ autoinstall:
               volume: format-1
               path: /
               
-    # --- Outras Configurações (Inalteradas) ---
+    # --- Configurações de Software ---
     packages:
         - libreoffice
         - gimp
@@ -103,7 +99,7 @@ autoinstall:
         - name: slack
           channel: stable
           classic: false
-        - name: code 
+        - name: code # VS Code
           channel: stable
           classic: true 
         - name: dbeaver-ce 
@@ -115,6 +111,9 @@ autoinstall:
         install: true
     updates: all
     shutdown: reboot
+    
+    # --- Comandos Pós-Instalação (NVM) ---
     late-commands:
+        # Simplificado para apenas executar a instalação do NVM no usuário 'diolinux'
         - |
           su - diolinux -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash"
