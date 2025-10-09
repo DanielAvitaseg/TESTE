@@ -1,0 +1,119 @@
+#cloud-config
+autoinstall:
+    version: 1
+    identity:
+        realname: 'Dionatan Simioni'
+        hostname: ubuntu-desktop
+        username: diolinux
+        password: '$y$j9T$uhkxlm8nUQaNu.6rl4k2d.$DIldpYy96OHg8lFjfXfc671BZcGWkPOmaDONGAhGSg3'
+    locale: pt_BR.utf8
+    keyboard:
+        layout: br
+    timezone: "America/Sao_Paulo"    
+    
+    # --- Configuração de Armazenamento com Criptografia LVM ---
+    storage:
+        # Define que a instalação deve usar o disco 'sda' e criptografá-lo
+        config:
+            - id: disk-sda
+              type: disk
+              name: sda
+              match:
+                # Altere este valor se o disco de instalação não for 'sda'
+                uuid: 
+              ptable: gpt
+              wipe: superblock-recursive
+            
+            # 1. Partição de boot (necessária para LVM criptografado)
+            - id: partition-0
+              type: partition
+              disk: disk-sda
+              size: 536870912 # 512 MB para /boot (não criptografado)
+              flag: boot
+              grub_device: true
+            
+            # 2. Partição principal (será criptografada)
+            - id: partition-1
+              type: partition
+              disk: disk-sda
+              size: 0 # O restante do disco
+              
+            # 3. Criptografia da partição principal (LUKS)
+            - id: encryption-0
+              type: encrypt
+              volume: partition-1
+              # IMPORTANTE: A senha de criptografia DEVE ser um hash.
+              # Use um gerador de hash (como 'openssl passwd -6') e substitua o valor abaixo.
+              # Este valor 'password' é um placeholder. O instalador rejeitará a senha em texto puro.
+              password: '078edf56ac338b70ab9881055061eb00afabb2713d4954c129eece0c87449134be8a387d855c953a9d1558e2d42d4a905b4200d595d6f392fc6b2475291ca516' # **SUBSTITUA PELO HASH DA SENHA REAL**
+              
+            # 4. Volume Group LVM sobre a partição criptografada
+            - id: volgroup-0
+              type: lvm_volgroup
+              name: vg-system
+              volumes:
+                - encryption-0
+                
+            # 5. Logical Volume (raiz)
+            - id: logicalvolume-0
+              type: lvm_partition
+              volgroup: volgroup-0
+              size: 0
+              name: lv-root
+              
+            # 6. Formatação e Montagem
+            - id: format-0
+              type: format
+              volume: partition-0 # Partição /boot
+              fstype: ext4
+            - id: format-1
+              type: format
+              volume: logicalvolume-0 # Partição raiz criptografada
+              fstype: ext4
+            
+            - id: mount-0
+              type: mount
+              volume: format-0
+              path: /boot
+            - id: mount-1
+              type: mount
+              volume: format-1
+              path: /
+              
+    # --- Outras Configurações (Inalteradas) ---
+    packages:
+        - libreoffice
+        - gimp
+        - git
+        - wget
+        - docker.io
+        - apt-transport-https 
+        - ca-certificates
+        - curl
+        - gnupg
+        - lsb-release
+    snaps:
+        - name: spotify
+          channel: stable
+          classic: false
+        - name: postman 
+          channel: stable
+          classic: false
+        - name: slack
+          channel: stable
+          classic: false
+        - name: code 
+          channel: stable
+          classic: true 
+        - name: dbeaver-ce 
+          channel: stable
+          classic: false
+    codecs:
+        install: true
+    drivers:
+        install: true
+    updates: all
+    shutdown: reboot
+    late-commands:
+        - |
+          su - diolinux -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash"
