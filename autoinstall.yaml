@@ -47,25 +47,76 @@ autoinstall:
     updates: all
     shutdown: reboot
     
-    # --- Comandos Pós-Instalação ---
+ # ... outras seções ...
+    
     late-commands:
-        # 1. Instalação do NVM (como usuário diolinux)
         - |
-          su - diolinux -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash"
+          # --- Instalação de Programas (Executado como root) ---
+          
+          # DBeaver
+          echo "[INFO] Instalando DBeaver..."
+          echo "deb [signed-by=/usr/share/keyrings/dbeaver.gpg] https://dbeaver.io/debs/dbeaver-ce /" | tee /etc/apt/sources.list.d/dbeaver.list
+          wget -qO - https://dbeaver.io/debs/dbeaver.gpg.key | gpg --dearmor | tee /usr/share/keyrings/dbeaver.gpg > /dev/null
+          apt-get update
+          apt-get install -y dbeaver-ce
+          
+          # Docker
+          echo "[INFO] Instalando Docker..."
+          apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor | tee /usr/share/keyrings/docker.gpg > /dev/null
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list
+          apt-get update
+          apt-get install -y docker-ce
+          systemctl enable docker
+          
+          # Visual Studio Code
+          echo "[INFO] Instalando Visual Studio Code..."
+          curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | tee /usr/share/keyrings/microsoft.gpg
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/vscode stable main" | tee /etc/apt/sources.list.d/vscode.list
+          apt-get update
+          apt-get install -y code
+          
+          # Postman (Instalação Global)
+          echo "[INFO] Instalando Postman..."
+          wget https://dl.pstmn.io/download/latest/linux64 -O /tmp/postman.tar.gz
+          tar -xzf /tmp/postman.tar.gz -C /opt
+          ln -sf /opt/Postman/Postman /usr/bin/postman
+          rm /tmp/postman.tar.gz
+          
+          # Criação do arquivo .desktop (Global)
+          cat << EOF > /usr/share/applications/postman.desktop
+          [Desktop Entry]
+          Type=Application
+          Name=Postman
+          Icon=/opt/Postman/app/resources/app/assets/icon.png
+          Exec="/opt/Postman/Postman"
+          Comment=Postman Desktop App
+          Categories=Development;Code;
+          EOF
 
-        # 2. Instalação do .NET Core 6.0 e Configuração do NuGet (como usuário diolinux)
-        # Atenção: O script foi ajustado para evitar o uso de 'sudo' desnecessário
-        # e para garantir que o link simbólico aponte para o diretório correto do usuário.
-        - |
+          # --- Configuração de Usuário (Executado como diolinux) ---
+          
+          # Adicionar diolinux ao grupo Docker
+          echo "[INFO] Adicionando diolinux ao grupo docker..."
+          groupadd docker || true # Cria o grupo se não existir
+          usermod -aG docker diolinux
+          
+          # Instalação do NVM e .NET Core
+          echo "[INFO] Instalando NVM e .NET Core para diolinux..."
           su - diolinux -c '
+            # NVM
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash
+            
+            # .NET Core
             wget https://dot.net/v1/dotnet-install.sh -O /tmp/dotnet-install.sh && 
             chmod +x /tmp/dotnet-install.sh && 
             /tmp/dotnet-install.sh --channel 6.0 && 
             
-            # O link simbólico precisa ser criado como root (para /usr/bin) mas deve apontar para o home do usuário.
-            # Este é o único comando que deve ser executado com privilégios de root, mas o alvo é o caminho do usuário.
-            sudo ln -s /home/diolinux/.dotnet/dotnet /usr/bin/dotnet && 
-            
-            # Configuração do NuGet (como usuário diolinux)
+            # Configuração do NuGet (usa o binário do home)
             /home/diolinux/.dotnet/dotnet nuget add source https://gitlab.com/api/v4/projects/26749643/packages/nuget/index.json --name Gitlab --username gitlab+deploy-token-982472 --password h4V8PmDAVBzuHNAvsjAz --store-password-in-clear-text
           '
+          
+          # Link Simbólico Global para .NET (Executado como root, apontando para o home do usuário)
+          ln -s /home/diolinux/.dotnet/dotnet /usr/bin/dotnet
+
+          echo "[INFO] Instalação concluída!"
