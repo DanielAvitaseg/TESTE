@@ -45,7 +45,8 @@ autoinstall:
               # IMPORTANTE: A senha de criptografia DEVE ser um hash.
               # Use um gerador de hash (como 'openssl passwd -6') e substitua o valor abaixo.
               # Este valor 'password' é um placeholder. O instalador rejeitará a senha em texto puro.
-              password: '078edf56ac338b70ab9881055061eb00afabb2713d4954c129eece0c87449134be8a387d855c953a9d1558e2d42d4a905b4200d595d6f392fc6b2475291ca516' # **SUBSTITUA PELO HASH DA SENHA REAL**
+              password: '$6$dEsPnw6B0uPMsJtg$R8DQ9KoMZIR5/RW690CIyXcx/qQWQPBu1Ov0u9ctiWvibXbQB4vgPDbMDpPw3mNx08HNhL9Or3F9RL/rxiQJK0
+' # **SUBSTITUA PELO HASH DA SENHA REAL**
               
             # 4. Volume Group LVM sobre a partição criptografada
             - id: volgroup-0
