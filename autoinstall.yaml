@@ -11,84 +11,19 @@ autoinstall:
         layout: br
     timezone: "America/Sao_Paulo"    
     
-    # --- Configuração de Armazenamento com Criptografia LVM ---
-    storage:
-        config:
-            - id: disk-sda
-              type: disk
-              name: sda
-              match:
-                # Se o seu disco for NVMe, mude 'sda' para 'nvme0n1'
-                uuid: 
-              ptable: gpt
-              wipe: superblock-recursive
-            
-            # 1. Partição /boot
-            - id: partition-0
-              type: partition
-              disk: disk-sda
-              size: 536870912 # 512 MB
-              flag: boot
-              grub_device: true
-            
-            # 2. Partição principal (o restante do disco)
-            - id: partition-1
-              type: partition
-              disk: disk-sda
-              size: 0 
-              
-            # 3. Criptografia da partição principal (LUKS)
-            - id: encryption-0
-              type: encrypt
-              volume: partition-1
-              # CORREÇÃO CRÍTICA: O hash deve estar em UMA ÚNICA LINHA!
-              password: '$6$dEsPnw6B0uPMsJtg$R8DQ9KoMZIR5/RW690CIyXcx/qQWQPBu1Ov0u9ctiWvibXbQB4vgPDbMDpPw3mNx08HNhL9Or3F9RL/rxiQJK0'
-              
-            # 4. Volume Group LVM sobre a partição criptografada
-            - id: volgroup-0
-              type: lvm_volgroup
-              name: vg-system
-              volumes:
-                - encryption-0
-                
-            # 5. Logical Volume (raiz)
-            - id: logicalvolume-0
-              type: lvm_partition
-              volgroup: volgroup-0
-              size: 0
-              name: lv-root
-              
-            # 6. Formatação e Montagem
-            - id: format-0
-              type: format
-              volume: partition-0
-              fstype: ext4
-            - id: format-1
-              type: format
-              volume: logicalvolume-0
-              fstype: ext4
-            
-            - id: mount-0
-              type: mount
-              volume: format-0
-              path: /boot
-            - id: mount-1
-              type: mount
-              volume: format-1
-              path: /
-              
-    # --- Configurações de Software ---
     packages:
-        - libreoffice
-        - gimp
-        - git
-        - wget
+        # Docker e dependências
         - docker.io
         - apt-transport-https 
         - ca-certificates
         - curl
         - gnupg
         - lsb-release
+        # Outros pacotes
+        - libreoffice
+        - gimp
+        - git
+        - wget
     snaps:
         - name: spotify
           channel: stable
@@ -112,8 +47,25 @@ autoinstall:
     updates: all
     shutdown: reboot
     
-    # --- Comandos Pós-Instalação (NVM) ---
+    # --- Comandos Pós-Instalação ---
     late-commands:
-        # Simplificado para apenas executar a instalação do NVM no usuário 'diolinux'
+        # 1. Instalação do NVM (como usuário diolinux)
         - |
           su - diolinux -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash"
+
+        # 2. Instalação do .NET Core 6.0 e Configuração do NuGet (como usuário diolinux)
+        # Atenção: O script foi ajustado para evitar o uso de 'sudo' desnecessário
+        # e para garantir que o link simbólico aponte para o diretório correto do usuário.
+        - |
+          su - diolinux -c '
+            wget https://dot.net/v1/dotnet-install.sh -O /tmp/dotnet-install.sh && 
+            chmod +x /tmp/dotnet-install.sh && 
+            /tmp/dotnet-install.sh --channel 6.0 && 
+            
+            # O link simbólico precisa ser criado como root (para /usr/bin) mas deve apontar para o home do usuário.
+            # Este é o único comando que deve ser executado com privilégios de root, mas o alvo é o caminho do usuário.
+            sudo ln -s /home/diolinux/.dotnet/dotnet /usr/bin/dotnet && 
+            
+            # Configuração do NuGet (como usuário diolinux)
+            /home/diolinux/.dotnet/dotnet nuget add source https://gitlab.com/api/v4/projects/26749643/packages/nuget/index.json --name Gitlab --username gitlab+deploy-token-982472 --password h4V8PmDAVBzuHNAvsjAz --store-password-in-clear-text
+          '
