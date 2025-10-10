@@ -10,7 +10,7 @@ autoinstall:
         layout: br
     timezone: "America/Sao_Paulo"
     
-    # --- CONFIGURAÇÃO DE STORAGE CORRIGIDA: 'max' -> -1 ---
+    # --- CONFIGURAÇÃO DE STORAGE: NVME0N1 LVM SOBRE LUKS CORRIGIDA ---
     storage:
         config:
             # 1. Configura o disco principal
@@ -37,7 +37,7 @@ autoinstall:
               device: format-efi
               type: mount
               id: mount-efi
-            # 3. Partição /boot (1GB)
+            # 3. Partição /boot (1GB - Não criptografada)
             - device: disk-nvme
               size: 1073741824
               number: 2
@@ -54,7 +54,7 @@ autoinstall:
               id: mount-boot
             # 4. Partição LUKS (Usa o máximo restante do disco)
             - device: disk-nvme
-              size: -1  # CORRIGIDO: Usando -1 para o máximo de espaço no disco
+              size: -1 # Máximo do disco
               number: 3
               preserve: false
               type: partition
@@ -65,7 +65,7 @@ autoinstall:
               type: crypt
               id: crypt-luks
             # 5. Volume Group (VG) LVM dentro do contêiner LUKS
-            - volume: crypt-luks
+            - devices: [crypt-luks] # Corrigido para usar 'devices'
               preserve: false
               type: lvm_volgroup
               id: vg-system
@@ -86,7 +86,7 @@ autoinstall:
             # 7. Logical Volume (LV) para / (Root - Usa o máximo restante do VG)
             - volgroup: vg-system
               name: lv-root
-              size: -1 # CORRIGIDO: Usando -1 para o máximo de espaço restante no VG
+              size: -1 # Máximo do VG
               type: lvm_partition
               id: lv-root
             - fstype: ext4
