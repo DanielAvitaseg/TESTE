@@ -10,7 +10,7 @@ autoinstall:
         layout: br
     timezone: "America/Sao_Paulo"
     
-    # --- CONFIGURAÇÃO DE STORAGE: NVME0N1 LVM SOBRE LUKS CORRIGIDA ---
+    # --- CONFIGURAÇÃO DE STORAGE COM SINTAXE ALTERNATIVA PARA VG LVM ---
     storage:
         config:
             # 1. Configura o disco principal
@@ -65,8 +65,8 @@ autoinstall:
               type: crypt
               id: crypt-luks
             # 5. Volume Group (VG) LVM dentro do contêiner LUKS
-            # CORRIGIDO: O Volume Group deve ser criado a partir de 'devices'
-            - devices: [crypt-luks] 
+            # CORREÇÃO ALTERNATIVA: Revertendo para 'volume' (Volume Group é baseado em um volume PV)
+            - volume: crypt-luks # Usando 'volume' como a fonte do PV, ajustando alinhamento
               preserve: false
               type: lvm_volgroup
               id: vg-system
