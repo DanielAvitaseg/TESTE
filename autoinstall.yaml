@@ -10,7 +10,7 @@ autoinstall:
         layout: br
     timezone: "America/Sao_Paulo"
     
-    # --- CONFIGURAÇÃO DE STORAGE COM SINTAXE ALTERNATIVA PARA VG LVM ---
+    # --- CONFIGURAÇÃO DE STORAGE: SINTAXE LVM MAIS EXPLÍCITA ---
     storage:
         config:
             # 1. Configura o disco principal
@@ -54,7 +54,7 @@ autoinstall:
               id: mount-boot
             # 4. Partição LUKS (Usa o máximo restante do disco)
             - device: disk-nvme
-              size: -1 # Máximo do disco
+              size: -1 
               number: 3
               preserve: false
               type: partition
@@ -65,12 +65,12 @@ autoinstall:
               type: crypt
               id: crypt-luks
             # 5. Volume Group (VG) LVM dentro do contêiner LUKS
-            # CORREÇÃO ALTERNATIVA: Revertendo para 'volume' (Volume Group é baseado em um volume PV)
-            - volume: crypt-luks # Usando 'volume' como a fonte do PV, ajustando alinhamento
+            # SINTAXE EXPLÍCITA PARA FORNECER O ARGUMENTO 'DEVICES'
+            - name: vg-system
+              devices: [crypt-luks] # OBRIGATÓRIO (a chave que estava faltando/falhando)
               preserve: false
               type: lvm_volgroup
               id: vg-system
-              name: vg-system
             # 6. Logical Volume (LV) para swap (4GB)
             - volgroup: vg-system
               name: lv-swap
