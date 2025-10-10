@@ -10,7 +10,7 @@ autoinstall:
         layout: br
     timezone: "America/Sao_Paulo"
     
-    # --- CONFIGURAÇÃO DE STORAGE: SINTAXE LVM MAIS EXPLÍCITA ---
+    # --- CONFIGURAÇÃO DE STORAGE: NVME0N1 LVM SOBRE LUKS (Devices First) ---
     storage:
         config:
             # 1. Configura o disco principal
@@ -54,7 +54,7 @@ autoinstall:
               id: mount-boot
             # 4. Partição LUKS (Usa o máximo restante do disco)
             - device: disk-nvme
-              size: -1 
+              size: -1 # Máximo do disco
               number: 3
               preserve: false
               type: partition
@@ -65,9 +65,8 @@ autoinstall:
               type: crypt
               id: crypt-luks
             # 5. Volume Group (VG) LVM dentro do contêiner LUKS
-            # SINTAXE EXPLÍCITA PARA FORNECER O ARGUMENTO 'DEVICES'
-            - name: vg-system
-              devices: [crypt-luks] # OBRIGATÓRIO (a chave que estava faltando/falhando)
+            - devices: [crypt-luks] # Movemos para o topo.
+              name: vg-system
               preserve: false
               type: lvm_volgroup
               id: vg-system
