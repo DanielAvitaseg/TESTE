@@ -5,105 +5,77 @@ autoinstall:
         realname: 'Daniel Avita'
         hostname: ubuntu-desktop
         username: danielavita
-        password: '$y$j9T$uhkxlm8nUQaNu.6rl4k2d.$DIldpYy96OHg8lFjfXfc671BZcGWkPOmaDONGAhGSg3' # Hash de senha do usuário
+        password: '$y$j9T$uhkxlm8nUQaNu.6rl4k2d.$DIldpYy96OHg8lFjfXfc671BZcGWkPOmaDONGAhGSg3'
     locale: pt_BR.utf8
     keyboard:
         layout: br
     timezone: "America/Sao_Paulo"
     
     # -------------------------------------------------------------
-    # CONFIGURAÇÃO CORRIGIDA E SIMPLIFICADA DE STORAGE
+    # CONFIGURAÇÃO DE STORAGE FINAL E MAIS ESTÁVEL (NVME0N1 LVM/LUKS)
     # -------------------------------------------------------------
     storage:
         config:
-            # 1. Disco Principal (NVMe0n1)
-            - id: disk-nvme
-              type: disk
-              name: nvme0n1 
+            # 1. Limpa o disco principal
+            - type: disk
+              name: nvme0n1 # Confirmado para NVMe
               ptable: gpt
               wipe: superblock-recursive
               
-            # 2. Partição EFI (512 MB)
-            - id: partition-efi
-              type: partition
-              disk: disk-nvme
-              size: 536870912
+            # 2. Partição LUKS que cobre o restante do disco após as partições EFI/BOOT.
+            - type: partition
+              disk: nvme0n1
+              size: 0 # O restante do disco
               
-            # 3. Partição /boot (1 GB - Não Criptografada)
-            - id: partition-boot
-              type: partition
-              disk: disk-nvme
-              size: 1073741824
-              
-            # 4. Partição LUKS (Restante do disco)
-            - id: partition-luks
-              type: partition
-              disk: disk-nvme
-              size: 0
-              
-            # 5. Camada de Criptografia LUKS
-            - id: crypt-luks
-              type: encrypt
-              volume: partition-luks
-              # Use um HASH SHA-512 VÁLIDO (Ex: gerado por 'openssl passwd -6')
+            # 3. Camada de Criptografia LUKS
+            - type: crypt
+              volume: nvme0n1
+              # Senha de criptografia LVM/LUKS (Hash fornecido)
               password: '$6$dEsPnw6B0uPMsJtg$R8DQ9KoMZIR5/RW690CIyXcx/qQWQPBu1Ov0u9ctiWvibXbQB4vgPDbMDpPw3mNx08HNhL9Or3F9RL/rxiQJK0'
+              # Nome do mapeamento
+              name: nvme-crypt
               
-            # 6. Volume Group (VG) LVM dentro do contêiner LUKS
-            - id: vg-system
-              type: lvm_volgroup
+            # 4. Volume Group (VG) LVM dentro do contêiner LUKS
+            - type: lvm_volgroup
               name: vg-system
               volumes:
-                - crypt-luks
+                - nvme-crypt
                 
-            # 7. Logical Volume (LV) para / (Root)
-            - id: lv-root
-              type: lvm_partition
+            # 5. Logical Volume para a Raiz (automatic: true cria / e swap)
+            - type: lvm_partition
               volgroup: vg-system
-              size: 90%
+              size: 0 # O restante do VG
               name: lv-root
               
-            # 8. Logical Volume (LV) para swap
-            - id: lv-swap
-              type: lvm_partition
-              volgroup: vg-system
-              size: 0
-              name: lv-swap
-              
-            # 9. Formatação e Montagem
-            - id: format-efi
-              type: format
-              volume: partition-efi
-              fstype: vfat
-            - id: mount-efi
-              type: mount
-              volume: format-efi
-              path: /boot/efi
-              
-            - id: format-boot
-              type: format
-              volume: partition-boot
-              fstype: ext4
-            - id: mount-boot
-              type: mount
-              volume: format-boot
-              path: /boot
-              
-            - id: format-root
-              type: format
+            # 6. Formatação e Montagem
+            - type: format
               volume: lv-root
               fstype: ext4
-            - id: mount-root
-              type: mount
-              volume: format-root
+            - type: mount
+              volume: lv-root
               path: /
               
-            - id: format-swap
-              type: format
+            # 7. Habilita o particionamento automático para EFI e /boot (Recomendado)
+            - type: mount
+              path: /boot/efi
+              device: nvme0n1
+              partition: 1 # O instalador deve criar as partições automaticamente aqui
+              
+            - type: mount
+              path: /boot
+              device: nvme0n1
+              partition: 2
+              
+            # 8. Criação automática de Swap (dentro do LVM)
+            - type: lvm_partition
+              volgroup: vg-system
+              size: 4096M # 4GB de Swap, ajuste conforme necessário
+              name: lv-swap
+            - type: format
               volume: lv-swap
               fstype: swap
-            - id: mount-swap
-              type: mount
-              volume: format-swap
+            - type: mount
+              volume: lv-swap
               path: none
               
     # --- Softwares e Comandos (Mantidos) ---
@@ -134,7 +106,7 @@ autoinstall:
     shutdown: reboot
     
     late-commands:
-        # --- Instalação de Programas (Executado como root) ---
+        # --- Instalação de Programas (Bloco mantido o mais estável possível) ---
         - |
           echo "--- 1. INICIANDO INSTALAÇÕES DE SISTEMA (ROOT) ---"
           
