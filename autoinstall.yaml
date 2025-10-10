@@ -1,3 +1,4 @@
+#cloud-config
 autoinstall:
     version: 1
     identity:
@@ -11,124 +12,121 @@ autoinstall:
     timezone: "America/Sao_Paulo"
     
     # -------------------------------------------------------------
-    # CONFIGURAÇÃO CORRIGIDA DE STORAGE (NVME0N1 LVM SOBRE LUKS)
+    # CONFIGURAÇÃO CUSTOMIZADA DE STORAGE (NVME0N1 LVM SOBRE LUKS)
     # -------------------------------------------------------------
     storage:
         config:
-            # 1. Configura o disco principal
-            - ptable: gpt
-              path: /dev/nvme0n1
-              wipe: superblock-recursive
-              preserve: false
-              grub_device: true
+            # 1. Disco Principal (NVMe)
+            - id: disk-nvme
               type: disk
-              id: disk-nvme
-            # 2. Partição EFI (512MB)
-            - device: disk-nvme
-              size: 536870912 # 512MiB
+              name: nvme0n1 # CORRIGIDO: Nome do disco NVMe
+              ptable: gpt
+              wipe: superblock-recursive
+              
+            # 2. Partição EFI (512 MB)
+            - id: partition-efi
+              type: partition
+              disk: disk-nvme
+              size: 536870912
               flag: boot
-              number: 1
-              preserve: false
+              
+            # 3. Partição /boot (1 GB - Não Criptografada)
+            - id: partition-boot
               type: partition
-              id: partition-efi
-            - fstype: fat32
-              volume: partition-efi
-              type: format
-              id: format-efi
-            - path: /boot/efi
-              device: format-efi
-              type: mount
-              id: mount-efi
-            # 3. Partição /boot (1GB)
-            - device: disk-nvme
-              size: 1073741824 # 1GiB
-              number: 2
-              preserve: false
+              disk: disk-nvme
+              size: 1073741824
+              grub_device: true
+              
+            # 4. Partição LUKS (Restante do disco)
+            - id: partition-luks
               type: partition
-              id: partition-boot
-            - fstype: ext4
-              volume: partition-boot
-              type: format
-              id: format-boot
-            - path: /boot
-              device: format-boot
-              type: mount
-              id: mount-boot
-            # 4. Partição LUKS (Usa o máximo restante do disco)
-            - device: disk-nvme
-              size: max 
-              number: 3
-              preserve: false
-              type: partition
-              id: partition-luks
-            - dm_name: nvme-luks
-              key: '$y$j9T$CG1oplP.KXZCCrCYWZKdU1$.JDiEfu46VuTAWOghtNz.Yv2XJrXufE/b8my4pKDHxA'
+              disk: disk-nvme
+              size: 0
+              
+            # 5. Camada de Criptografia LUKS
+            - id: crypt-luks
+              type: encrypt
               volume: partition-luks
-              type: crypt
-              id: crypt-luks
-            # 5. Volume Group (VG) LVM dentro do contêiner LUKS
-            - volume: crypt-luks
-              preserve: false
+              # Senha de criptografia LVM/LUKS (Hash fornecido)
+              password: '$y$j9T$CG1oplP.KXZCCrCYWZKdU1$.JDiEfu46VuTAWOghtNz.Yv2XJrXufE/b8my4pKDHxA'
+              
+            # 6. Volume Group (VG) LVM dentro do contêiner LUKS
+            - id: vg-system
               type: lvm_volgroup
-              id: vg-system
               name: vg-system
-            # 6. Logical Volume (LV) para swap (4GB)
-            - volgroup: vg-system
-              name: lv-swap
-              size: 4294967296 # 4GiB
+              volumes:
+                - crypt-luks
+                
+            # 7. Logical Volume (LV) para / (Root - 90% do VG)
+            - id: lv-root
               type: lvm_partition
-              id: lv-swap
-            - fstype: swap
-              volume: lv-swap
-              type: format
-              id: format-swap
-            - device: format-swap
-              type: mount
-              id: mount-swap
-            # 7. Logical Volume (LV) para / (Root - Usa o máximo restante do VG)
-            - volgroup: vg-system
+              volgroup: vg-system
+              size: 90%
               name: lv-root
-              size: max
+              
+            # 8. Logical Volume (LV) para swap (Restante - 10%)
+            - id: lv-swap
               type: lvm_partition
-              id: lv-root
-            - fstype: ext4
-              volume: lv-root
+              volgroup: vg-system
+              size: 0
+              name: lv-swap
+              
+            # 9. Formatação e Montagem
+            - id: format-efi
               type: format
-              id: format-root
-            - path: /
-              device: format-root
+              volume: partition-efi
+              fstype: vfat
+            - id: mount-efi
               type: mount
-              id: mount-root
-
+              volume: format-efi
+              path: /boot/efi
+              
+            - id: format-boot
+              type: format
+              volume: partition-boot
+              fstype: ext4
+            - id: mount-boot
+              type: mount
+              volume: format-boot
+              path: /boot
+              
+            - id: format-root
+              type: format
+              volume: lv-root
+              fstype: ext4
+            - id: mount-root
+              type: mount
+              volume: format-root
+              path: /
+              
+            - id: format-swap
+              type: format
+              volume: lv-swap
+              fstype: swap
+            - id: mount-swap
+              type: mount
+              volume: format-swap
+              path: none
+              
     packages:
-        # Docker e dependências
-        - docker.io
+        - libreoffice
+        - gimp
+        - git
+        - wget
         - apt-transport-https
         - ca-certificates
         - curl
         - gnupg
         - lsb-release
-        # Outros pacotes
-        - libreoffice
-        - gimp
-        - git
-        - wget
+    
     snaps:
         - name: spotify
-          channel: stable
-          classic: false
-        - name: postman
           channel: stable
           classic: false
         - name: slack
           channel: stable
           classic: false
-        - name: code # VS Code
-          channel: stable
-          classic: true
-        - name: dbeaver-ce
-          channel: stable
-          classic: false
+    
     codecs:
         install: true
     drivers:
@@ -137,40 +135,33 @@ autoinstall:
     shutdown: reboot
     
     late-commands:
+        # --- Instalação de Programas (Executado como root) ---
         - |
-          # --- Instalação de Programas (Executado como root) ---
+          echo "--- 1. INICIANDO INSTALAÇÕES DE SISTEMA (ROOT) ---"
           
-          # DBeaver
-          echo "[INFO] Instalando DBeaver..."
+          # DBeaver, Docker, VS Code, Repositórios, etc.
+          echo "Configurando repositórios e chaves..."
           echo "deb [signed-by=/usr/share/keyrings/dbeaver.gpg] https://dbeaver.io/debs/dbeaver-ce /" | tee /etc/apt/sources.list.d/dbeaver.list
           wget -qO - https://dbeaver.io/debs/dbeaver.gpg.key | gpg --dearmor | tee /usr/share/keyrings/dbeaver.gpg > /dev/null
-          apt-get update
-          apt-get install -y dbeaver-ce
-          
-          # Docker
-          echo "[INFO] Instalando Docker..."
-          apt-get install -y apt-transport-https ca-certificates curl software-properties-common
           curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor | tee /usr/share/keyrings/docker.gpg > /dev/null
           echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list
-          apt-get update
-          apt-get install -y docker-ce
-          systemctl enable docker
-          
-          # Visual Studio Code
-          echo "[INFO] Instalando Visual Studio Code..."
           curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | tee /usr/share/keyrings/microsoft.gpg
           echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/vscode stable main" | tee /etc/apt/sources.list.d/vscode.list
-          apt-get update
-          apt-get install -y code
+          wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb
+          dpkg -i packages-microsoft-prod.deb
+          rm packages-microsoft-prod.deb
           
+          # Update e Instalação (Agrupada)
+          echo "Executando apt update e instalações de pacotes externos..."
+          apt-get update
+          apt-get install -y dbeaver-ce docker-ce powershell code
+
           # Postman (Instalação Global)
-          echo "[INFO] Instalando Postman..."
+          echo "Instalando Postman Globalmente..."
           wget https://dl.pstmn.io/download/latest/linux64 -O /tmp/postman.tar.gz
           tar -xzf /tmp/postman.tar.gz -C /opt
           ln -sf /opt/Postman/Postman /usr/bin/postman
           rm /tmp/postman.tar.gz
-          
-          # Criação do arquivo .desktop (Global)
           cat << EOF > /usr/share/applications/postman.desktop
           [Desktop Entry]
           Type=Application
@@ -180,30 +171,30 @@ autoinstall:
           Comment=Postman Desktop App
           Categories=Development;Code;
           EOF
-
-          # --- Configuração de Usuário (Executado como danielavita) ---
           
-          # Adicionar danielavita ao grupo Docker
-          echo "[INFO] Adicionando danielavita ao grupo docker..."
-          groupadd docker || true # Cria o grupo se não existir
+          # Configurações de Permissão (Root)
+          echo "Configurando grupos de permissão e serviços..."
+          groupadd docker || true 
           usermod -aG docker danielavita
+          systemctl enable docker
           
-          # Instalação do NVM e .NET Core
-          echo "[INFO] Instalando NVM e .NET Core para danielavita..."
+          # 2. INSTALAÇÃO DE PROGRAMAS DE USUÁRIO (NVM e .NET Core)
+          echo "--- 2. INICIANDO INSTALAÇÕES DE USUÁRIO (DANIELAVITA) ---"
           su - danielavita -c '
-            # NVM
+            echo "Iniciando instalação do NVM..."
             curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash
             
-            # .NET Core
-            wget https://dot.net/v1/dotnet-install.sh -O /tmp/dotnet-install.sh && 
-            chmod +x /tmp/dotnet-install.sh && 
-            /tmp/dotnet-install.sh --channel 6.0 && 
+            echo "Iniciando instalação do .NET Core..."
+            wget https://dot.net/v1/dotnet-install.sh -O /tmp/dotnet-install.sh
+            chmod +x /tmp/dotnet-install.sh
+            /tmp/dotnet-install.sh --channel 6.0
             
-            # Configuração do NuGet (usa o binário do home)
+            echo "Configurando NuGet..."
             /home/danielavita/.dotnet/dotnet nuget add source https://gitlab.com/api/v4/projects/26749643/packages/nuget/index.json --name Gitlab --username gitlab+deploy-token-982472 --password h4V8PmDAVBzuHNAvsjAz --store-password-in-clear-text
           '
           
-          # Link Simbólico Global para .NET (Executado como root, apontando para o home do usuário)
+          # Link Simbólico Global para .NET (Root)
+          echo "Criando link simbólico para dotnet..."
           ln -s /home/danielavita/.dotnet/dotnet /usr/bin/dotnet
 
-          echo "[INFO] Instalação concluída!"
+          echo "--- INSTALAÇÃO AUTOMÁTICA CONCLUÍDA! ---"
