@@ -65,7 +65,8 @@ autoinstall:
               type: crypt
               id: crypt-luks
             # 5. Volume Group (VG) LVM dentro do contêiner LUKS
-            - devices: [crypt-luks] # Corrigido para usar 'devices'
+            # CORRIGIDO: O Volume Group deve ser criado a partir de 'devices'
+            - devices: [crypt-luks] 
               preserve: false
               type: lvm_volgroup
               id: vg-system
