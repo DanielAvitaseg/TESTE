@@ -1,26 +1,24 @@
-#cloud-config
 autoinstall:
     version: 1
     identity:
-        realname: 'Dionatan Simioni'
+        realname: 'Daniel Avita'
         hostname: ubuntu-desktop
-        username: diolinux
-        password: '$y$j9T$uhkxlm8nUQaNu.6rl4k2d.$DIldpYy96OHg8lFjfXfc671BZcGWkPOmaDONGAhGSg3'
+        username: danielavita
+        password: '$y$j9T$r3jSE01jOINJ0ZQBUa.o01$HoZazeOorrAeqFRgw.mA0OeAq78xeMnjjUt7Aw5Sjw4'
     locale: pt_BR.utf8
     keyboard:
         layout: br
-    timezone: "America/Sao_Paulo"    
+    timezone: "America/Sao_Paulo"
     
     packages:
         # Docker e dependências
         - docker.io
-        - apt-transport-https 
+        - apt-transport-https
         - ca-certificates
         - curl
         - gnupg
         - lsb-release
         # Outros pacotes
-        - libreoffice
         - gimp
         - git
         - wget
@@ -28,7 +26,7 @@ autoinstall:
         - name: spotify
           channel: stable
           classic: false
-        - name: postman 
+        - name: postman
           channel: stable
           classic: false
         - name: slack
@@ -36,8 +34,8 @@ autoinstall:
           classic: false
         - name: code # VS Code
           channel: stable
-          classic: true 
-        - name: dbeaver-ce 
+          classic: true
+        - name: dbeaver-ce
           channel: stable
           classic: false
     codecs:
@@ -47,7 +45,7 @@ autoinstall:
     updates: all
     shutdown: reboot
     
- # ... outras seções ...
+# ... outras seções ...
     
     late-commands:
         - |
@@ -94,16 +92,16 @@ autoinstall:
           Categories=Development;Code;
           EOF
 
-          # --- Configuração de Usuário (Executado como diolinux) ---
+          # --- Configuração de Usuário (Executado como danielavita) ---
           
-          # Adicionar diolinux ao grupo Docker
-          echo "[INFO] Adicionando diolinux ao grupo docker..."
+          # Adicionar danielavita ao grupo Docker
+          echo "[INFO] Adicionando danielavita ao grupo docker..."
           groupadd docker || true # Cria o grupo se não existir
-          usermod -aG docker diolinux
+          usermod -aG docker danielavita
           
           # Instalação do NVM e .NET Core
-          echo "[INFO] Instalando NVM e .NET Core para diolinux..."
-          su - diolinux -c '
+          echo "[INFO] Instalando NVM e .NET Core para danielavita..."
+          su - danielavita -c '
             # NVM
             curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash
             
@@ -113,10 +111,10 @@ autoinstall:
             /tmp/dotnet-install.sh --channel 6.0 && 
             
             # Configuração do NuGet (usa o binário do home)
-            /home/diolinux/.dotnet/dotnet nuget add source https://gitlab.com/api/v4/projects/26749643/packages/nuget/index.json --name Gitlab --username gitlab+deploy-token-982472 --password h4V8PmDAVBzuHNAvsjAz --store-password-in-clear-text
+            /home/danielavita/.dotnet/dotnet nuget add source https://gitlab.com/api/v4/projects/26749643/packages/nuget/index.json --name Gitlab --username gitlab+deploy-token-982472 --password h4V8PmDAVBzuHNAvsjAz --store-password-in-clear-text
           '
           
           # Link Simbólico Global para .NET (Executado como root, apontando para o home do usuário)
-          ln -s /home/diolinux/.dotnet/dotnet /usr/bin/dotnet
+          ln -s /home/danielavita/.dotnet/dotnet /usr/bin/dotnet
 
           echo "[INFO] Instalação concluída!"
