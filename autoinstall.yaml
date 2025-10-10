@@ -4,12 +4,102 @@ autoinstall:
         realname: 'Daniel Avita'
         hostname: ubuntu-desktop
         username: danielavita
-        password: '$y$j9T$r3jSE01jOINJ0ZQBUa.o01$HoZazeOorrAeqFRgw.mA0OeAq78xeMnjjUt7Aw5Sjw4'
+        password: '$y$j9T$uhkxlm8nUQaNu.6rl4k2d.$DIldpYy96OHg8lFjfXfc671BZcGWkPOmaDONGAhGSg3'
     locale: pt_BR.utf8
     keyboard:
         layout: br
     timezone: "America/Sao_Paulo"
     
+    # -------------------------------------------------------------
+    # CONFIGURAÇÃO CUSTOMIZADA DE STORAGE (NVME0N1 LVM SOBRE LUKS)
+    # -------------------------------------------------------------
+    storage:
+        config:
+            # 1. Configura o disco principal
+            - ptable: gpt
+              path: /dev/nvme0n1
+              wipe: superblock-recursive
+              preserve: false
+              grub_device: true
+              type: disk
+              id: disk-nvme
+            # 2. Partição EFI (512MB)
+            - device: disk-nvme
+              size: 536870912 # 512MiB
+              flag: boot
+              number: 1
+              preserve: false
+              type: partition
+              id: partition-efi
+            - fstype: fat32
+              volume: partition-efi
+              type: format
+              id: format-efi
+            - path: /boot/efi
+              device: format-efi
+              type: mount
+              id: mount-efi
+            # 3. Partição /boot (1GB)
+            - device: disk-nvme
+              size: 1073741824 # 1GiB
+              number: 2
+              preserve: false
+              type: partition
+              id: partition-boot
+            - fstype: ext4
+              volume: partition-boot
+              type: format
+              id: format-boot
+            - path: /boot
+              device: format-boot
+              type: mount
+              id: mount-boot
+            # 4. Partição LUKS (Restante do disco)
+            - device: disk-nvme
+              size: -1 # Usa o restante do espaço
+              number: 3
+              preserve: false
+              type: partition
+              id: partition-luks
+            - dm_name: nvme-luks
+              key: '$y$j9T$CG1oplP.KXZCCrCYWZKdU1$.JDiEfu46VuTAWOghtNz.Yv2XJrXufE/b8my4pKDHxA'
+              volume: partition-luks
+              type: crypt
+              id: crypt-luks
+            # 5. Volume Group (VG) LVM dentro do contêiner LUKS
+            - volume: crypt-luks
+              preserve: false
+              type: lvm_volgroup
+              id: vg-system
+              name: vg-system
+            # 6. Logical Volume (LV) para / (Root - 90% do VG)
+            - volgroup: vg-system
+              name: lv-root
+              size: 90%
+              type: lvm_partition
+              id: lv-root
+            - fstype: ext4
+              volume: lv-root
+              type: format
+              id: format-root
+            - path: /
+              device: format-root
+              type: mount
+              id: mount-root
+            # 7. Logical Volume (LV) para swap (Restante do VG - 10%)
+            - volgroup: vg-system
+              name: lv-swap
+              size: -1 # Usa o restante do VG
+              type: lvm_partition
+              id: lv-swap
+            - fstype: swap
+              volume: lv-swap
+              type: format
+              id: format-swap
+            - device: format-swap
+              type: mount
+              id: mount-swap
+
     packages:
         # Docker e dependências
         - docker.io
@@ -19,6 +109,7 @@ autoinstall:
         - gnupg
         - lsb-release
         # Outros pacotes
+        - libreoffice
         - gimp
         - git
         - wget
@@ -44,8 +135,6 @@ autoinstall:
         install: true
     updates: all
     shutdown: reboot
-    
-# ... outras seções ...
     
     late-commands:
         - |
