@@ -11,7 +11,7 @@ autoinstall:
     timezone: "America/Sao_Paulo"
     
     # -------------------------------------------------------------
-    # CONFIGURAÇÃO CUSTOMIZADA DE STORAGE (NVME0N1 LVM SOBRE LUKS)
+    # CONFIGURAÇÃO CORRIGIDA DE STORAGE (NVME0N1 LVM SOBRE LUKS)
     # -------------------------------------------------------------
     storage:
         config:
@@ -54,9 +54,9 @@ autoinstall:
               device: format-boot
               type: mount
               id: mount-boot
-            # 4. Partição LUKS (Restante do disco)
+            # 4. Partição LUKS (Usa o máximo restante do disco)
             - device: disk-nvme
-              size: -1 # Usa o restante do espaço
+              size: max 
               number: 3
               preserve: false
               type: partition
@@ -72,10 +72,23 @@ autoinstall:
               type: lvm_volgroup
               id: vg-system
               name: vg-system
-            # 6. Logical Volume (LV) para / (Root - 90% do VG)
+            # 6. Logical Volume (LV) para swap (4GB)
+            - volgroup: vg-system
+              name: lv-swap
+              size: 4294967296 # 4GiB
+              type: lvm_partition
+              id: lv-swap
+            - fstype: swap
+              volume: lv-swap
+              type: format
+              id: format-swap
+            - device: format-swap
+              type: mount
+              id: mount-swap
+            # 7. Logical Volume (LV) para / (Root - Usa o máximo restante do VG)
             - volgroup: vg-system
               name: lv-root
-              size: 90%
+              size: max
               type: lvm_partition
               id: lv-root
             - fstype: ext4
@@ -86,19 +99,6 @@ autoinstall:
               device: format-root
               type: mount
               id: mount-root
-            # 7. Logical Volume (LV) para swap (Restante do VG - 10%)
-            - volgroup: vg-system
-              name: lv-swap
-              size: -1 # Usa o restante do VG
-              type: lvm_partition
-              id: lv-swap
-            - fstype: swap
-              volume: lv-swap
-              type: format
-              id: format-swap
-            - device: format-swap
-              type: mount
-              id: mount-swap
 
     packages:
         # Docker e dependências
