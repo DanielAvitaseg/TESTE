@@ -52,52 +52,6 @@ autoinstall:
               device: format-boot
               type: mount
               id: mount-boot
-            # 4. Partição LUKS (Usa o máximo restante do disco)
-            - device: disk-nvme
-              size: -1 # Máximo do disco
-              number: 3
-              preserve: false
-              type: partition
-              id: partition-luks
-            - dm_name: nvme-luks
-              key: '$y$j9T$CG1oplP.KXZCCrCYWZKdU1$.JDiEfu46VuTAWOghtNz.Yv2XJrXufE/b8my4pKDHxA'
-              volume: partition-luks
-              type: crypt
-              id: crypt-luks
-            # 5. Volume Group (VG) LVM dentro do contêiner LUKS
-            - devices: [crypt-luks] # Movemos para o topo.
-              name: vg-system
-              preserve: false
-              type: lvm_volgroup
-              id: vg-system
-            # 6. Logical Volume (LV) para swap (4GB)
-            - volgroup: vg-system
-              name: lv-swap
-              size: 4294967296 # 4GiB
-              type: lvm_partition
-              id: lv-swap
-            - fstype: swap
-              volume: lv-swap
-              type: format
-              id: format-swap
-            - device: format-swap
-              type: mount
-              id: mount-swap
-            # 7. Logical Volume (LV) para / (Root - Usa o máximo restante do VG)
-            - volgroup: vg-system
-              name: lv-root
-              size: -1 # Máximo do VG
-              type: lvm_partition
-              id: lv-root
-            - fstype: ext4
-              volume: lv-root
-              type: format
-              id: format-root
-            - path: /
-              device: format-root
-              type: mount
-              id: mount-root
-
     packages:
         # Docker e dependências
         - docker.io
