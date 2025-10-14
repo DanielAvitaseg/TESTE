@@ -3,7 +3,7 @@ autoinstall:
   version: 1
   identity:
     realname: 'Dionatan Simioni'
-    hostname: ubuntu-desktop
+    hostname: ubuntu-test-crypt
     username: diolinux
     # Hash SHA512 para o usuário 'diolinux'
     password: '$y$j9T$uhkxlm8nUQaNu.6rl4k2d.$DIldpYy96OHg8lFjfXfc671BZcGWkPOmaDONGAhGSg3' 
@@ -12,18 +12,19 @@ autoinstall:
     layout: br
   timezone: "America/Sao_Paulo"
 
-  # --- Configuração de Armazenamento com Criptografia LUKS/LVM (CORRIGIDO) ---
+  # --- Configuração MÍNIMA de Armazenamento com Criptografia LUKS/LVM ---
   storage:
     config:
     # 1. Identificação e Limpeza do Disco Principal
     - id: disk-nvme
       type: disk
       match:
+        # Confirma a seleção do disco NVMe
         path: /dev/nvme0n1
       ptable: gpt
       wipe: superblock-recursive
       
-    # 2. Partição /boot (Partição EFI em sistemas UEFI, 512 MB)
+    # 2. Partição /boot (não criptografada, 512 MB)
     - id: partition-boot
       type: partition
       device: disk-nvme
@@ -41,13 +42,14 @@ autoinstall:
     - id: encryption-luks
       type: encrypt
       volume: partition-luks
+      # Senha de criptografia
       password: Avita123 
 
-    # 5. Volume Group LVM sobre o volume criptografado (CORRIGIDO: usando 'devices')
+    # 5. Volume Group LVM sobre o volume criptografado
     - id: volgroup-system
       type: lvm_volgroup
       name: vg-system
-      devices:  # <--- CORREÇÃO: Deve ser 'devices' e não 'volumes'
+      devices: 
       - encryption-luks 
 
     # 6. Logical Volume (raiz)
@@ -75,46 +77,6 @@ autoinstall:
       volume: format-root
       path: /
       
-  # --- Configurações de Software e Pós-Instalação (INALTERADAS) ---
-  packages:
-    - libreoffice
-    - gimp
-    - git
-    - wget
-    - docker.io
-    - apt-transport-https
-    - ca-certificates
-    - curl
-    - gnupg
-    - lsb-release
-
-  snaps:
-    - name: spotify
-      channel: stable
-      classic: false
-    - name: postman
-      channel: stable
-      classic: false
-    - name: slack
-      channel: stable
-      classic: false
-    - name: code
-      channel: stable
-      classic: true
-    - name: dbeaver-ce
-      channel: stable
-      classic: false
-
-  codecs:
-    install: true
-  drivers:
-    install: true
-
+  # --- Configurações MÍNIMAS DE INSTALAÇÃO ---
   updates: all
   shutdown: reboot
-
-  late-commands:
-    - |
-      curl -o /target/home/diolinux/install-nvm.sh https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh
-      echo 'su - diolinux -c "bash /home/diolinux/install-nvm.sh"' >> /target/var/lib/cloud/scripts/per-instance/nvm.sh
-      chmod +x /target/var/lib/cloud/scripts/per-instance/nvm.sh
