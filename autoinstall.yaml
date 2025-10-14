@@ -1,5 +1,3 @@
-
-
 #cloud-config
 autoinstall:
   version: 1
@@ -7,76 +5,81 @@ autoinstall:
     realname: 'Dionatan Simioni'
     hostname: ubuntu-desktop
     username: diolinux
-    password: '$y$j9T$uhkxlm8nUQaNu.6rl4k2d.$DIldpYy96OHg8lFjfXfc671BZcGWkPOmaDONGAhGSg3'  # Certifique-se de que o hash está correto.
+    password: '$y$j9T$uhkxlm8nUQaNu.6rl4k2d.$DIldpYy96OHg8lFjfXfc671BZcGWkPOmaDONGAhGSg3' # Hash SHA512 para 'diolinux'
   locale: pt_BR.utf8
   keyboard:
     layout: br
   timezone: "America/Sao_Paulo"
 
-  # --- Configuração de Armazenamento com Criptografia LVM ---
+  # --- Configuração de Armazenamento com Criptografia LUKS/LVM ---
   storage:
     config:
-    - id: disk-sda
+    # 1. Identificação e Limpeza do Disco Principal
+    - id: disk-nvme
       type: disk
-      name: sda
       match:
-        name: nvme0n1 # Use o nome do disco diretamente.
+        # A chave 'path' é mais robusta para identificar o disco
+        path: /dev/nvme0n1
       ptable: gpt
+      # 'wipe: superblock-recursive' garante uma limpeza completa
       wipe: superblock-recursive
-
-    # 1. Partição de boot (necessária para LVM criptografado)
-    - id: partition-0
+      
+    # 2. Partição /boot (não criptografada)
+    - id: partition-boot
       type: partition
-      disk: disk-sda
-      size: 536870912  # 512 MB para /boot
+      disk: disk-nvme
+      size: 536870912 # 512 MB
       flag: boot
-      grub_device: true
+      grub_device: true # Define esta partição como o local para a instalação do GRUB
 
-    # 2. Partição principal (será criptografada)
-    - id: partition-1
+    # 3. Partição Principal (o restante do disco, a ser criptografada)
+    - id: partition-luks
       type: partition
-      disk: disk-sda
-      size: 0  # O restante do disco
+      disk: disk-nvme
+      size: 0 # O restante do disco
 
-    # 3. Criptografia da partição principal (LUKS)
-    - id: encryption-0
+    # 4. Criptografia LUKS sobre a partição principal
+    - id: encryption-luks
       type: encrypt
-      volume: partition-1
-      password: null  # Deixe em 'null' para interagir durante a instalação ou use passphrase (testar)
+      volume: partition-luks
+      # IMPORTANTE: A senha de criptografia em texto plano aqui.
+      # Para o modo interativo, use 'null' ou omita a chave 'password'.
+      # Para uma senha automática, insira a frase secreta em texto plano (CUIDADO!).
+      password: Avita123 
 
-    # 4. Volume Group LVM sobre a partição criptografada
-    - id: volgroup-0
+    # 5. Volume Group LVM sobre o volume criptografado
+    - id: volgroup-system
       type: lvm_volgroup
       name: vg-system
       volumes:
-      - encryption-0
+      - encryption-luks # O volume criptografado é a base do LVM
 
-    # 5. Logical Volume (raiz)
-    - id: logicalvolume-0
+    # 6. Logical Volume (raiz)
+    - id: logicalvolume-root
       type: lvm_partition
-      volgroup: volgroup-0
-      size: 0
+      volgroup: volgroup-system
+      size: 0 # Ocupa todo o Volume Group
       name: lv-root
 
-    # 6. Formatação e Montagem
-    - id: format-0
+    # 7. Formatação e Montagem
+    - id: format-boot
       type: format
-      volume: partition-0
+      volume: partition-boot
       fstype: ext4
-    - id: format-1
+    - id: format-root
       type: format
-      volume: logicalvolume-0
+      volume: logicalvolume-root
       fstype: ext4
-    - id: mount-0
+    - id: mount-boot
       type: mount
-      volume: format-0
+      volume: format-boot
       path: /boot
-    - id: mount-1
+    - id: mount-root
       type: mount
-      volume: format-1
+      volume: format-root
       path: /
-
-  # --- Outras Configurações (Inalteradas) ---
+      
+  # --- Outras Configurações ---
   packages:
     - libreoffice
     - gimp
@@ -115,6 +118,7 @@ autoinstall:
   shutdown: reboot
 
   late-commands:
+    # Use '>> /target/var/lib/cloud/scripts/per-instance/nvm.sh' para garantir que seja executado *após* a inicialização do cloud-init no sistema alvo
     - |
       # Instalando NVM após o primeiro boot
       curl -o /target/home/diolinux/install-nvm.sh https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh
