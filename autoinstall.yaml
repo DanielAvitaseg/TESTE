@@ -12,70 +12,16 @@ autoinstall:
     layout: br
   timezone: "America/Sao_Paulo"
 
-  # --- Configuração de Armazenamento Corrigida ---
+  # --- CONFIGURAÇÃO DE ARMAZENAMENTO AUTOMÁTICA E ROBUSTA ---
+  # Esta é a forma mais confiável de configurar a criptografia total.
   storage:
-    config:
-    # 1. Identificação e Limpeza do Disco Principal
-    - id: disk-nvme
-      type: disk
-      match:
-        path: /dev/nvme0n1
-      ptable: gpt
-      wipe: superblock-recursive
+    layout:
+      name: encrypted # Usa o layout automático de criptografia total (LUKS sobre LVM)
+      device: /dev/nvme0n1 # Dispositivo a ser usado
+      key: Avita123 # Senha de criptografia em texto plano (CUIDADO!)
+      # IMPORTANTE: Se o seu sistema for UEFI, ele criará as partições /boot e /boot/efi
+      # automaticamente. Não é necessário definir particionamento manual.
       
-    # 2. Partição /boot (512 MB)
-    - id: partition-boot
-      type: partition
-      device: disk-nvme
-      size: 536870912 
-      flag: boot
-      grub_device: true 
-
-    # 3. Partição Principal (restante, para LUKS)
-    - id: partition-luks
-      type: partition
-      device: disk-nvme
-      size: 0 
-
-    # 4. Criptografia LUKS sobre a partição principal
-    - id: encryption-luks
-      type: encrypt
-      volume: partition-luks
-      password: Avita123 
-
-    # 5. Volume Group LVM sobre o volume criptografado
-    - id: volgroup-system
-      type: lvm_volgroup
-      name: vg-system
-      # CORREÇÃO: Usamos 'devices' e o ID do volume criptografado
-      devices: 
-      - encryption-luks 
-
-    # 6. Logical Volume (raiz)
-    - id: logicalvolume-root
-      type: lvm_partition
-      volgroup: volgroup-system
-      size: 0 
-      name: lv-root
-
-    # 7. Formatação e Montagem
-    - id: format-boot
-      type: format
-      volume: partition-boot
-      fstype: ext4
-    - id: format-root
-      type: format
-      volume: logicalvolume-root
-      fstype: ext4
-    - id: mount-boot
-      type: mount
-      volume: format-boot
-      path: /boot
-    - id: mount-root
-      type: mount
-      volume: format-root
-      path: /
-      
-  # --- Configurações MÍNIMAS DE INSTALAÇÃO ---
+  # --- Configurações de Pós-Instalação ---
   updates: all
   shutdown: reboot
