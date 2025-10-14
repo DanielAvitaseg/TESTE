@@ -12,19 +12,18 @@ autoinstall:
     layout: br
   timezone: "America/Sao_Paulo"
 
-  # --- Configuração MÍNIMA de Armazenamento com Criptografia LUKS/LVM ---
+  # --- Configuração de Armazenamento Corrigida ---
   storage:
     config:
     # 1. Identificação e Limpeza do Disco Principal
     - id: disk-nvme
       type: disk
       match:
-        # Confirma a seleção do disco NVMe
         path: /dev/nvme0n1
       ptable: gpt
       wipe: superblock-recursive
       
-    # 2. Partição /boot (não criptografada, 512 MB)
+    # 2. Partição /boot (512 MB)
     - id: partition-boot
       type: partition
       device: disk-nvme
@@ -32,7 +31,7 @@ autoinstall:
       flag: boot
       grub_device: true 
 
-    # 3. Partição Principal (o restante do disco, a ser criptografada)
+    # 3. Partição Principal (restante, para LUKS)
     - id: partition-luks
       type: partition
       device: disk-nvme
@@ -42,13 +41,13 @@ autoinstall:
     - id: encryption-luks
       type: encrypt
       volume: partition-luks
-      # Senha de criptografia
       password: Avita123 
 
     # 5. Volume Group LVM sobre o volume criptografado
     - id: volgroup-system
       type: lvm_volgroup
       name: vg-system
+      # CORREÇÃO: Usamos 'devices' e o ID do volume criptografado
       devices: 
       - encryption-luks 
 
