@@ -5,7 +5,8 @@ autoinstall:
     realname: 'Dionatan Simioni'
     hostname: ubuntu-desktop
     username: diolinux
-    password: '$y$j9T$uhkxlm8nUQaNu.6rl4k2d.$DIldpYy96OHg8lFjfXfc671BZcGWkPOmaDONGAhGSg3' # Hash SHA512 para 'diolinux'
+    # Hash SHA512 para o usuário 'diolinux'
+    password: '$y$j9T$uhkxlm8nUQaNu.6rl4k2d.$DIldpYy96OHg8lFjfXfc671BZcGWkPOmaDONGAhGSg3' 
   locale: pt_BR.utf8
   keyboard:
     layout: br
@@ -18,33 +19,30 @@ autoinstall:
     - id: disk-nvme
       type: disk
       match:
-        # A chave 'path' é mais robusta para identificar o disco
+        # Confirma a seleção do disco NVMe
         path: /dev/nvme0n1
       ptable: gpt
-      # 'wipe: superblock-recursive' garante uma limpeza completa
       wipe: superblock-recursive
       
-    # 2. Partição /boot (não criptografada)
+    # 2. Partição /boot (não criptografada, 512 MB)
     - id: partition-boot
       type: partition
       disk: disk-nvme
-      size: 536870912 # 512 MB
+      size: 536870912 
       flag: boot
-      grub_device: true # Define esta partição como o local para a instalação do GRUB
+      grub_device: true 
 
-    # 3. Partição Principal (o restante do disco, a ser criptografada)
+    # 3. Partição Principal (o restante do disco)
     - id: partition-luks
       type: partition
       disk: disk-nvme
-      size: 0 # O restante do disco
+      size: 0 
 
     # 4. Criptografia LUKS sobre a partição principal
     - id: encryption-luks
       type: encrypt
       volume: partition-luks
-      # IMPORTANTE: A senha de criptografia em texto plano aqui.
-      # Para o modo interativo, use 'null' ou omita a chave 'password'.
-      # Para uma senha automática, insira a frase secreta em texto plano (CUIDADO!).
+      # Senha de criptografia em texto plano para automação
       password: Avita123 
 
     # 5. Volume Group LVM sobre o volume criptografado
@@ -52,13 +50,13 @@ autoinstall:
       type: lvm_volgroup
       name: vg-system
       volumes:
-      - encryption-luks # O volume criptografado é a base do LVM
+      - encryption-luks 
 
     # 6. Logical Volume (raiz)
     - id: logicalvolume-root
       type: lvm_partition
       volgroup: volgroup-system
-      size: 0 # Ocupa todo o Volume Group
+      size: 0 
       name: lv-root
 
     # 7. Formatação e Montagem
@@ -79,7 +77,7 @@ autoinstall:
       volume: format-root
       path: /
       
-  # --- Outras Configurações ---
+  # --- Configurações de Software e Pós-Instalação ---
   packages:
     - libreoffice
     - gimp
@@ -118,9 +116,10 @@ autoinstall:
   shutdown: reboot
 
   late-commands:
-    # Use '>> /target/var/lib/cloud/scripts/per-instance/nvm.sh' para garantir que seja executado *após* a inicialização do cloud-init no sistema alvo
+    # Script que será executado no sistema alvo após a instalação
     - |
-      # Instalando NVM após o primeiro boot
+      # Cria o script de instalação do NVM
       curl -o /target/home/diolinux/install-nvm.sh https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh
+      # Adiciona o comando para executar o script no primeiro boot via cloud-init
       echo 'su - diolinux -c "bash /home/diolinux/install-nvm.sh"' >> /target/var/lib/cloud/scripts/per-instance/nvm.sh
       chmod +x /target/var/lib/cloud/scripts/per-instance/nvm.sh
