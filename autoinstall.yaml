@@ -5,22 +5,20 @@ autoinstall:
     realname: 'Dionatan Simioni'
     hostname: ubuntu-test-crypt
     username: diolinux
-    # Hash SHA512 para o usuário 'diolinux'
-    password: '$y$j9T$uhkxlm8nUQaNu.6rl4k2d.$DIldpYy96OHg8lFjfXfc671BZcGWkPOmaDONGAhGSg3' 
+    # NOVO HASH SHA512CRYPT (fornecido por você)
+    password: '$6$A9DbYaGQ3fq63Bxr$mZpgT1rHmtXEIotzNmqJdxXOMV6JKKp9bNvhyHW0AWAVWcs1Wrj1jHH5N/VtgP2UVpsUD/jzdCbyO.dhQqZUq/' 
   locale: pt_BR.utf8
   keyboard:
     layout: br
   timezone: "America/Sao_Paulo"
 
   # --- CONFIGURAÇÃO DE ARMAZENAMENTO AUTOMÁTICA E ROBUSTA ---
-  # Esta é a forma mais confiável de configurar a criptografia total.
+  # Utiliza o layout automático (mais confiável) para criptografia total.
   storage:
     layout:
       name: encrypted # Usa o layout automático de criptografia total (LUKS sobre LVM)
-      device: /dev/nvme0n1 # Dispositivo a ser usado
-      key: Avita123 # Senha de criptografia em texto plano (CUIDADO!)
-      # IMPORTANTE: Se o seu sistema for UEFI, ele criará as partições /boot e /boot/efi
-      # automaticamente. Não é necessário definir particionamento manual.
+      device: /dev/nvme0n1 # Disco a ser usado
+      key: Avita123 # Senha de criptografia em texto plano
       
   # --- Configurações de Pós-Instalação ---
   updates: all
