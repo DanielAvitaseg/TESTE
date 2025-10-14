@@ -5,13 +5,14 @@ autoinstall:
     realname: 'Dionatan Simioni'
     hostname: ubuntu-desktop
     username: diolinux
+    # Hash SHA512 para o usuário 'diolinux'
     password: '$y$j9T$uhkxlm8nUQaNu.6rl4k2d.$DIldpYy96OHg8lFjfXfc671BZcGWkPOmaDONGAhGSg3' 
   locale: pt_BR.utf8
   keyboard:
     layout: br
   timezone: "America/Sao_Paulo"
 
-  # --- Configuração de Armazenamento com Criptografia LUKS/LVM (CORRIGIDA) ---
+  # --- Configuração de Armazenamento com Criptografia LUKS/LVM (CORRIGIDO) ---
   storage:
     config:
     # 1. Identificação e Limpeza do Disco Principal
@@ -22,18 +23,18 @@ autoinstall:
       ptable: gpt
       wipe: superblock-recursive
       
-    # 2. Partição /boot (AGORA USANDO 'device')
+    # 2. Partição /boot (Partição EFI em sistemas UEFI, 512 MB)
     - id: partition-boot
       type: partition
-      device: disk-nvme  # <--- CORRIGIDO: Substituído 'disk' por 'device'
+      device: disk-nvme
       size: 536870912 
       flag: boot
       grub_device: true 
 
-    # 3. Partição Principal (AGORA USANDO 'device')
+    # 3. Partição Principal (o restante do disco, a ser criptografada)
     - id: partition-luks
       type: partition
-      device: disk-nvme  # <--- CORRIGIDO: Substituído 'disk' por 'device'
+      device: disk-nvme
       size: 0 
 
     # 4. Criptografia LUKS sobre a partição principal
@@ -42,11 +43,11 @@ autoinstall:
       volume: partition-luks
       password: Avita123 
 
-    # 5. Volume Group LVM sobre o volume criptografado
+    # 5. Volume Group LVM sobre o volume criptografado (CORRIGIDO: usando 'devices')
     - id: volgroup-system
       type: lvm_volgroup
       name: vg-system
-      volumes:
+      devices:  # <--- CORREÇÃO: Deve ser 'devices' e não 'volumes'
       - encryption-luks 
 
     # 6. Logical Volume (raiz)
