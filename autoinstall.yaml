@@ -5,20 +5,78 @@ autoinstall:
     realname: 'Dionatan Simioni'
     hostname: ubuntu-test-crypt
     username: diolinux
-    # NOVO HASH SHA512CRYPT (fornecido por você)
     password: '$6$A9DbYaGQ3fq63Bxr$mZpgT1rHmtXEIotzNmqJdxXOMV6JKKp9bNvhyHW0AWAVWcs1Wrj1jHH5N/VtgP2UVpsUD/jzdCbyO.dhQqZUq/' 
   locale: pt_BR.utf8
   keyboard:
     layout: br
   timezone: "America/Sao_Paulo"
 
-  # --- CONFIGURAÇÃO DE ARMAZENAMENTO AUTOMÁTICA E ROBUSTA ---
-  # Utiliza o layout automático (mais confiável) para criptografia total.
+  # --- CONFIGURAÇÃO DE ARMAZENAMENTO MANUAL (LUKS Simples) ---
   storage:
-    layout:
-      name: encrypted # Usa o layout automático de criptografia total (LUKS sobre LVM)
-      device: /dev/nvme0n1 # Disco a ser usado
-      key: Avita123 # Senha de criptografia em texto plano
+    config:
+    # 1. Identificação do Disco
+    - id: disk-nvme
+      type: disk
+      match:
+        path: /dev/nvme0n1
+      ptable: gpt
+      wipe: superblock-recursive
+      
+    # 2. Partição EFI (Necessária para UEFI, ~550 MB)
+    - id: partition-efi
+      type: partition
+      device: disk-nvme
+      size: 550M
+      fstype: fat32 # Usamos fstype aqui para garantir o formato
+      flag: boot
+      
+    # 3. Partição /boot (1 GB)
+    - id: partition-boot
+      type: partition
+      device: disk-nvme
+      size: 1024M 
+      
+    # 4. Partição Raiz para Criptografia (o restante do disco)
+    - id: partition-root-luks
+      type: partition
+      device: disk-nvme
+      size: 0 # Ocupa o restante
+
+    # 5. Criptografia LUKS
+    - id: encrypt-root
+      type: encrypt
+      volume: partition-root-luks
+      password: Avita123 
+      
+    # 6. Formatação e Montagem
+    - id: format-efi
+      type: format
+      volume: partition-efi
+      fstype: fat32
+    - id: format-boot
+      type: format
+      volume: partition-boot
+      fstype: ext4
+    - id: format-root
+      type: format
+      volume: encrypt-root
+      fstype: ext4 # Formata o volume DEPOIS de criptografado
+
+    # 7. Pontos de Montagem
+    - id: mount-efi
+      type: mount
+      volume: format-efi
+      path: /boot/efi
+      # Define o disco raiz para o GRUB
+      grub_device: true 
+    - id: mount-boot
+      type: mount
+      volume: format-boot
+      path: /boot
+    - id: mount-root
+      type: mount
+      volume: format-root
+      path: /
       
   # --- Configurações de Pós-Instalação ---
   updates: all
