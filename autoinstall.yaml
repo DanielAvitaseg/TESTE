@@ -1,161 +1,122 @@
+
+
+#cloud-config
 autoinstall:
-    version: 1
-    identity:
-        realname: 'Daniel Avita'
-        hostname: ubuntu-desktop
-        username: danielavita
-        password: '$y$j9T$uhkxlm8nUQaNu.6rl4k2d.$DIldpYy96OHg8lFjfXfc671BZcGWkPOmaDONGAhGSg3'
-    locale: pt_BR.utf8
-    keyboard:
-        layout: br
-    timezone: "America/Sao_Paulo"
-    
-    # --- CONFIGURAÇÃO DE STORAGE: NVME0N1 LVM SOBRE LUKS (Devices First) ---
-    storage:
-        config:
-            # 1. Configura o disco principal
-            - ptable: gpt
-              path: /dev/nvme0n1
-              wipe: superblock-recursive
-              preserve: false
-              grub_device: true
-              type: disk
-              id: disk-nvme
-            # 2. Partição EFI (512MB)
-            - device: disk-nvme
-              size: 536870912
-              flag: boot
-              number: 1
-              preserve: false
-              type: partition
-              id: partition-efi
-            - fstype: fat32
-              volume: partition-efi
-              type: format
-              id: format-efi
-            - path: /boot/efi
-              device: format-efi
-              type: mount
-              id: mount-efi
-            # 3. Partição /boot (1GB - Não criptografada)
-            - device: disk-nvme
-              size: 1073741824
-              number: 2
-              preserve: false
-              type: partition
-              id: partition-boot
-            - fstype: ext4
-              volume: partition-boot
-              type: format
-              id: format-boot
-            - path: /boot
-              device: format-boot
-              type: mount
-              id: mount-boot
-    packages:
-        # Docker e dependências
-        - docker.io
-        - apt-transport-https
-        - ca-certificates
-        - curl
-        - gnupg
-        - lsb-release
-        # Outros pacotes
-        - libreoffice
-        - gimp
-        - git
-        - wget
-    snaps:
-        - name: spotify
-          channel: stable
-          classic: false
-        - name: postman
-          channel: stable
-          classic: false
-        - name: slack
-          channel: stable
-          classic: false
-        - name: code # VS Code
-          channel: stable
-          classic: true
-        - name: dbeaver-ce
-          channel: stable
-          classic: false
-    codecs:
-        install: true
-    drivers:
-        install: true
-    updates: all
-    shutdown: reboot
-    
-    late-commands:
-        - |
-          # --- Instalação de Programas (Executado como root) ---
-          
-          # DBeaver
-          echo "[INFO] Instalando DBeaver..."
-          echo "deb [signed-by=/usr/share/keyrings/dbeaver.gpg] https://dbeaver.io/debs/dbeaver-ce /" | tee /etc/apt/sources.list.d/dbeaver.list
-          wget -qO - https://dbeaver.io/debs/dbeaver.gpg.key | gpg --dearmor | tee /usr/share/keyrings/dbeaver.gpg > /dev/null
-          apt-get update
-          apt-get install -y dbeaver-ce
-          
-          # Docker
-          echo "[INFO] Instalando Docker..."
-          apt-get install -y apt-transport-https ca-certificates curl software-properties-common
-          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor | tee /usr/share/keyrings/docker.gpg > /dev/null
-          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list
-          apt-get update
-          apt-get install -y docker-ce
-          systemctl enable docker
-          
-          # Visual Studio Code
-          echo "[INFO] Instalando Visual Studio Code..."
-          curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | tee /usr/share/keyrings/microsoft.gpg
-          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/vscode stable main" | tee /etc/apt/sources.list.d/vscode.list
-          apt-get update
-          apt-get install -y code
-          
-          # Postman (Instalação Global)
-          echo "[INFO] Instalando Postman..."
-          wget https://dl.pstmn.io/download/latest/linux64 -O /tmp/postman.tar.gz
-          tar -xzf /tmp/postman.tar.gz -C /opt
-          ln -sf /opt/Postman/Postman /usr/bin/postman
-          rm /tmp/postman.tar.gz
-          
-          # Criação do arquivo .desktop (Global)
-          cat << EOF > /usr/share/applications/postman.desktop
-          [Desktop Entry]
-          Type=Application
-          Name=Postman
-          Icon=/opt/Postman/app/resources/app/assets/icon.png
-          Exec="/opt/Postman/Postman"
-          Comment=Postman Desktop App
-          Categories=Development;Code;
-          EOF
+  version: 1
+  identity:
+    realname: 'Dionatan Simioni'
+    hostname: ubuntu-desktop
+    username: diolinux
+    password: '$y$j9T$uhkxlm8nUQaNu.6rl4k2d.$DIldpYy96OHg8lFjfXfc671BZcGWkPOmaDONGAhGSg3'  # Certifique-se de que o hash está correto.
+  locale: pt_BR.utf8
+  keyboard:
+    layout: br
+  timezone: "America/Sao_Paulo"
 
-          # --- Configuração de Usuário (Executado como danielavita) ---
-          
-          # Adicionar danielavita ao grupo Docker
-          echo "[INFO] Adicionando danielavita ao grupo docker..."
-          groupadd docker || true # Cria o grupo se não existir
-          usermod -aG docker danielavita
-          
-          # Instalação do NVM e .NET Core
-          echo "[INFO] Instalando NVM e .NET Core para danielavita..."
-          su - danielavita -c '
-            # NVM
-            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash
-            
-            # .NET Core
-            wget https://dot.net/v1/dotnet-install.sh -O /tmp/dotnet-install.sh && 
-            chmod +x /tmp/dotnet-install.sh && 
-            /tmp/dotnet-install.sh --channel 6.0 && 
-            
-            # Configuração do NuGet (usa o binário do home)
-            /home/danielavita/.dotnet/dotnet nuget add source https://gitlab.com/api/v4/projects/26749643/packages/nuget/index.json --name Gitlab --username gitlab+deploy-token-982472 --password h4V8PmDAVBzuHNAvsjAz --store-password-in-clear-text
-          '
-          
-          # Link Simbólico Global para .NET (Executado como root, apontando para o home do usuário)
-          ln -s /home/danielavita/.dotnet/dotnet /usr/bin/dotnet
+  # --- Configuração de Armazenamento com Criptografia LVM ---
+  storage:
+    config:
+    - id: disk-sda
+      type: disk
+      name: sda
+      match:
+        name: nvme0n1 # Use o nome do disco diretamente.
+      ptable: gpt
+      wipe: superblock-recursive
 
-          echo "[INFO] Instalação concluída!"
+    # 1. Partição de boot (necessária para LVM criptografado)
+    - id: partition-0
+      type: partition
+      disk: disk-sda
+      size: 536870912  # 512 MB para /boot
+      flag: boot
+      grub_device: true
+
+    # 2. Partição principal (será criptografada)
+    - id: partition-1
+      type: partition
+      disk: disk-sda
+      size: 0  # O restante do disco
+
+    # 3. Criptografia da partição principal (LUKS)
+    - id: encryption-0
+      type: encrypt
+      volume: partition-1
+      password: null  # Deixe em 'null' para interagir durante a instalação ou use passphrase (testar)
+
+    # 4. Volume Group LVM sobre a partição criptografada
+    - id: volgroup-0
+      type: lvm_volgroup
+      name: vg-system
+      volumes:
+      - encryption-0
+
+    # 5. Logical Volume (raiz)
+    - id: logicalvolume-0
+      type: lvm_partition
+      volgroup: volgroup-0
+      size: 0
+      name: lv-root
+
+    # 6. Formatação e Montagem
+    - id: format-0
+      type: format
+      volume: partition-0
+      fstype: ext4
+    - id: format-1
+      type: format
+      volume: logicalvolume-0
+      fstype: ext4
+    - id: mount-0
+      type: mount
+      volume: format-0
+      path: /boot
+    - id: mount-1
+      type: mount
+      volume: format-1
+      path: /
+
+  # --- Outras Configurações (Inalteradas) ---
+  packages:
+    - libreoffice
+    - gimp
+    - git
+    - wget
+    - docker.io
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    - gnupg
+    - lsb-release
+
+  snaps:
+    - name: spotify
+      channel: stable
+      classic: false
+    - name: postman
+      channel: stable
+      classic: false
+    - name: slack
+      channel: stable
+      classic: false
+    - name: code
+      channel: stable
+      classic: true
+    - name: dbeaver-ce
+      channel: stable
+      classic: false
+
+  codecs:
+    install: true
+  drivers:
+    install: true
+
+  updates: all
+  shutdown: reboot
+
+  late-commands:
+    - |
+      # Instalando NVM após o primeiro boot
+      curl -o /target/home/diolinux/install-nvm.sh https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh
+      echo 'su - diolinux -c "bash /home/diolinux/install-nvm.sh"' >> /target/var/lib/cloud/scripts/per-instance/nvm.sh
+      chmod +x /target/var/lib/cloud/scripts/per-instance/nvm.sh
