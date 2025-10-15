@@ -22,30 +22,280 @@ autoinstall:
     # Usando o hash fornecido anteriormente, que é o formato mais seguro
     password: "$6$EAyehhfqepzaGX78$k4Qceki0nxJKS2.ZxcWyWjn7db3p7/0Qu.S6pr32pIqVpzfFmwnOj/.XKgY6x3ADG077lE.DoNwMpXZ2aXr3q." 
     
-  # CORREÇÃO 1: 'package' não existe. Se precisar instalar pacotes
-  # adicionais, use 'packages' (no plural). Se for apenas para instalar
-  # o Ubuntu Server, esta seção pode ser omitida.
-  # Se você quer o desktop, você instalaria o pacote 'ubuntu-desktop'.
-  # Neste caso, vamos instalar o servidor padrão:
-  
-  # Instalação padrão (não requer a chave 'package')
-  # packages:
-  #   - ubuntu-server
-  
   locale: pt_BR
   timezone: America/Sao_Paulo
   
-  # CORREÇÃO 2: Simplificação do teclado
   keyboard:
     layout: br
-    # 'variant: abnt2' removido para evitar o erro 'Unknown keyboard variant'
 
   # ====================================================================
   # PÓS-INSTALAÇÃO E AÇÃO FINAL
   # ====================================================================
   late-commands:
+    # Comandos de atualização inicial
     - curtin in-target -- apt update
     - curtin in-target -- apt upgrade -y
+    
+    # ===================================================================
+    # INÍCIO DA INSTALAÇÃO DAS FERRAMENTAS DE DESENVOLVIMENTO
+    # (TODOS OS COMANDOS SÃO ENCAPSULADOS POR 'curtin in-target --')
+    # ===================================================================
+
+    - curtin in-target -- echo "🛠️ Iniciando a instalação das ferramentas de desenvolvimento..."
+
+    # --- 1. PREPARAÇÃO GERAL (CURL GARANTIDO) ---
+    - curtin in-target -- echo "--- 1. Preparando o sistema (Update e pacotes base, incluindo curl) ---"
+    # O 'apt update' e 'apt upgrade' já foram feitos acima, mas os pacotes base são importantes
+    - curtin in-target -- sudo apt install -y apt-transport-https ca-certificates curl software-properties-common wget gpg lsb-release
+
+    # --- 2. INSTALAÇÃO DO DBEAVER CE ---
+    - curtin in-target -- echo "--- 2. Instalando DBeaver CE ---"
+    - curtin in-target -- echo "deb https://dbeaver.io/debs/dbeaver-ce /" | sudo tee /etc/apt/sources.list.d/dbeaver.list > /dev/null
+    # Nota: A maneira de adicionar a chave GPG foi adaptada para ser amigável ao curtin/tee
+    - curtin in-target -- wget -O - https://dbeaver.io/debs/dbeaver.gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/dbeaver.gpg > /dev/null
+    - curtin in-target -- apt update
+    - curtin in-target -- apt install -y dbeaver-ce
+
+    # --- 3. INSTALAÇÃO DO DOCKER & DOCKER COMPOSE ---
+    - curtin in-target -- echo "--- 3. Instalando Docker e Docker Compose ---"
+    - curtin in-target -- sudo install -m 0755 -d /etc/apt/keyrings
+    - curtin in-target -- curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    - curtin in-target -- sudo chmod a+r /etc/apt/keyrings/docker.gpg
+    - curtin in-target -- VERSION_CODENAME=$(lsb_release -cs)
+    # A linha com 'echo' foi encapsulada para funcionar dentro do 'curtin in-target --'
+    - curtin in-target -- sh -c 'echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $VERSION_CODENAME stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null'
+    - curtin in-target -- apt update
+    - curtin in-target -- apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+    # Instalando Docker Compose V1 (para compatibilidade com scripts legados)
+    - curtin in-target -- DOCKER_COMPOSE_VERSION="1.29.2"
+    - curtin in-target -- sudo curl -L "https://github.com/docker/compose/releases/download/$DOCKER_COMPOSE_VERSION/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    - curtin in-target -- sudo chmod +x /usr/local/bin/docker-compose
+
+    - curtin in-target -- sudo systemctl enable docker
+    # O comando abaixo adiciona o usuário 'testuser' ao grupo 'docker'
+    - curtin in-target -- if ! grep -q "docker" /etc/group; then sudo groupadd docker; fi
+    - curtin in-target -- sudo usermod -aG docker testuser # Usando 'testuser' em vez de '$USER'
+
+    # --- 4. INSTALAÇÃO DO .NET SDK 6.0 ---
+    - curtin in-target -- echo "--- 4. Instalando .NET SDK 6.0 ---"
+    - curtin in-target -- DOTNET_INSTALLER_PATH="/home/testuser/dotnet-install.sh"
+    - curtin in-target -- wget https://dot.net/v1/dotnet-install.sh -O "$DOTNET_INSTALLER_PATH"
+    - curtin in-target -- chmod +x "$DOTNET_INSTALLER_PATH"
+    # Executa como o usuário 'testuser' para instalar no seu diretório home
+    - curtin in-target -- runuser -l testuser -c '"$DOTNET_INSTALLER_PATH" --channel 6.0'
+    - curtin in-target -- rm "$DOTNET_INSTALLER_PATH"
+
+    # --- 5. INSTALAÇÃO DO NVM (Node Version Manager) e Node.js 18 ---
+    - curtin in-target -- echo "--- 5. Instalando NVM e Node.js 18 ---"
+    # Instala o NVM como o usuário 'testuser'
+    - curtin in-target -- runuser -l testuser -c 'curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash'
+    
+    # Configura e instala o Node.js 18 como 'testuser'. Necessário carregar o NVM
+    - curtin in-target -- runuser -l testuser -c 'export NVM_DIR="/home/testuser/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm install 18 && nvm use 18'
+
+    # --- 6. INSTALAÇÃO DO POSTMAN ---
+    - curtin in-target -- echo "--- 6. Instalando Postman ---"
+    - curtin in-target -- POSTMAN_URL="https://dl.pstmn.io/download/latest/linux64"
+    - curtin in-target -- POSTMAN_TAR="/home/testuser/postman.tar.gz"
+    - curtin in-target -- wget "$POSTMAN_URL" -O "$POSTMAN_TAR"
+    - curtin in-target -- sudo tar -xzf "$POSTMAN_TAR" -C /opt
+    - curtin in-target -- sudo ln -sf /opt/Postman/Postman /usr/bin/postman
+    - curtin in-target -- rm "$POSTMAN_TAR"
+
+    # Criando o atalho .desktop (usando um bloco de estilo literal |)
+    - |
+      curtin in-target -- tee /usr/share/applications/postman.desktop > /dev/null << EOF
+      [Desktop Entry]
+      Type=Application
+      Name=Postman
+      Icon=/opt/Postman/app/resources/app/assets/icon.png
+      Exec="/opt/Postman/Postman"
+      Comment=Postman Desktop App
+      Categories=Development;Code;
+      EOF
+
+    # --- 7. INSTALAÇÃO DO SLACK ---
+    - curtin in-target -- echo "--- 7. Instalando Slack ---"
+    - curtin in-target -- SLACK_URL="https://downloads.slack-edge.com/desktop-releases/linux/x64/4.46.101/slack-desktop-4.46.101-amd64.deb"
+    - curtin in-target -- SLACK_DEB="/home/testuser/slack.deb"
+    - curtin in-target -- wget "$SLACK_URL" -O "$SLACK_DEB"
+    - curtin in-target -- sudo apt install "$SLACK_DEB" -y
+    - curtin in-target -- rm "$SLACK_DEB"
+
+    # --- 8. INSTALAÇÃO DO VS CODE E EXTENSÕES ---
+    - curtin in-target -- echo "--- 8. Instalando VS Code e Extensões ---"
+    - curtin in-target -- curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /tmp/microsoft.gpg # Usando /tmp
+    - curtin in-target -- sudo install -o root -g root -m 644 /tmp/microsoft.gpg /etc/apt/keyrings/
+    - curtin in-target -- sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/vscode stable main" > /etc/apt/sources.list.d/vscode.list'
+    - curtin in-target -- rm /tmp/microsoft.gpg
+    - curtin in-target -- apt update
+    - curtin in-target -- apt install -y code
+
+    - curtin in-target -- echo "Instalando extensões do VS Code (executando como testuser)..."
+    # Instalar extensões VS Code como 'testuser'
+    # Nota: A instalação de extensões dentro do late-commands pode ser problemática.
+    # Usaremos 'runuser' para simular a execução como 'testuser'.
+    - curtin in-target -- runuser -l testuser -c '
+        if command -v code &> /dev/null; then
+            EXTENSIONS=(
+                ms-dotnettools.vscode-dotnet-runtime
+                ms-dotnettools.csharp
+                Angular.ng-template
+                johnpapa.angular2
+                fernandoescolar.vscode-solution-explorer
+                esbenp.prettier-vscode
+                ms-dotnettools.vscodeintellicode-csharp
+                dbaeumer.vscode-eslint
+                rangav.vscode-thunder-client
+            )
+            for EXT in "${EXTENSIONS[@]}"; do
+                code --install-extension "$EXT" --force
+            done
+        fi
+    '
+
+    # =================================================================
+    # === PARTE DE VERIFICAÇÃO AUTOMÁTICA (Executada como testuser) ===
+    # =================================================================
+    # Nota: A verificação final requer variáveis de ambiente e a carga correta do NVM.
+    # Será mais estável executar isso em um script separado (ou runuser) e apenas
+    # mostrar as falhas básicas do sistema.
+
+    # O bloco de verificação é muito complexo para ser traduzido linha por linha
+    # com 'curtin in-target --'. É mais robusto colocá-lo em um único script
+    # e executá-lo com 'runuser' como o usuário 'testuser'.
+
+    - |
+      curtin in-target -- tee /home/testuser/verify_tools.sh > /dev/null << 'EOF'
+      #!/bin/bash
+      
+      echo ""
+      echo "--- 🔎 INICIANDO VERIFICAÇÃO DE INSTALAÇÃO DE FERRAMENTAS ---"
+      
+      FAIL_COUNT=0
+      SEPARATOR="=================================================="
+      
+      # Função auxiliar para verificar comandos
+      verify_command() {
+          local command_name="$1"
+          local verification_command="$2"
+          local expected_output_regex="$3"
+      
+          echo -n "Verificando $command_name... "
+          if command -v "$command_name" &> /dev/null; then
+              output=$($verification_command 2>&1)
+              if [[ $output =~ $expected_output_regex ]]; then
+                  echo "✅ [OK] (Versão: $(echo "$output" | head -n 1 | awk '{print $NF}'))"
+              else
+                  echo "⚠️ [AVISO] Comando encontrado, mas a versão/saída não é clara."
+              fi
+          else
+              echo "❌ [FALHA] Comando não encontrado."
+              FAIL_COUNT=$((FAIL_COUNT + 1))
+          fi
+      }
+      
+      # 1. DBeaver CE (Verificar existência do arquivo desktop)
+      echo "$SEPARATOR"
+      DOCKER_DESKTOP_VERIFY="/usr/share/applications/dbeaver-ce.desktop"
+      echo -n "Verificando DBeaver CE... "
+      if [ -f "$DOCKER_DESKTOP_VERIFY" ]; then
+          echo "✅ [OK] (Atalho .desktop encontrado)"
+      else
+          if [ -x "/usr/bin/dbeaver-ce" ]; then
+              echo "⚠️ [AVISO] Atalho não encontrado, mas executável DBeaver existe em /usr/bin/."
+          else
+              echo "❌ [FALHA] (Atalho ou Executável não encontrado.)"
+              FAIL_COUNT=$((FAIL_COUNT + 1))
+          fi
+      fi
+      
+      # 2. Docker
+      echo "$SEPARATOR"
+      # O Docker precisa de permissões, a verificação simples pode falhar.
+      # Usaremos a verificação de binário para este contexto.
+      verify_command "docker" "docker --version" "Docker version"
+      
+      # 3. Docker Compose (Verificando o binário do v1)
+      verify_command "docker-compose" "docker-compose --version" "docker-compose version"
+      
+      # 4. .NET SDK 6.0 (Apenas no diretório do usuário)
+      echo "$SEPARATOR"
+      DOTNET_PATH="$HOME/.dotnet/dotnet"
+      echo -n "Verificando .NET SDK 6.0 (local)... "
+      if [ -x "$DOTNET_PATH" ]; then
+          # A verificação de versão é feita fora do PATH
+          VERSION_OUTPUT=$("$DOTNET_PATH" --version 2>&1 | grep -E '^(6\.|7\.|8\.)')
+          if [ -n "$VERSION_OUTPUT" ]; then
+              echo "✅ [OK] (Versão: $VERSION_OUTPUT)"
+          else
+              echo "❌ [FALHA] Executável .NET encontrado, mas a versão 6.0+ não foi detectada."
+              FAIL_COUNT=$((FAIL_COUNT + 1))
+          fi
+      else
+          echo "❌ [FALHA] Executável .NET não encontrado em $DOTNET_PATH."
+          FAIL_COUNT=$((FAIL_COUNT + 1))
+      fi
+      
+      # 5. NVM e Node.js 18
+      echo "$SEPARATOR"
+      NVM_DIR_CHECK="$HOME/.nvm/nvm.sh"
+      echo -n "Verificando NVM... "
+      if [ -f "$NVM_DIR_CHECK" ]; then
+          echo "✅ [OK] (Script nvm.sh encontrado)"
+          
+          # Tenta carregar o NVM e o Node.js 18
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+      
+          echo -n "Verificando Node.js 18... "
+          if command -v node &> /dev/null && [[ $(node -v 2>&1) =~ v18 ]]; then
+              echo "✅ [OK] (Versão: $(node -v 2>&1))"
+          else
+              echo "⚠️ [AVISO] Node (ou Node 18) pode não estar carregado. Use 'nvm use 18' em um novo terminal."
+          fi
+      else
+          echo "❌ [FALHA] NVM não encontrado."
+          FAIL_COUNT=$((FAIL_COUNT + 1))
+      fi
+      
+      
+      # 6. Postman
+      echo "$SEPARATOR"
+      POSTMAN_LINK="/usr/bin/postman"
+      POSTMAN_DESKTOP_VERIFY="/usr/share/applications/postman.desktop"
+      echo -n "Verificando Postman... "
+      if [ -L "$POSTMAN_LINK" ] && [ -f "$POSTMAN_DESKTOP_VERIFY" ]; then
+          echo "✅ [OK] (Link e Atalho .desktop encontrados)"
+      else
+          echo "❌ [FALHA] Link ou Atalho .desktop não encontrado."
+          FAIL_COUNT=$((FAIL_COUNT + 1))
+      fi
+      
+      # 7. Slack
+      echo "$SEPARATOR"
+      verify_command "slack" "slack --version" "."
+      
+      # 8. VS Code
+      echo "$SEPARATOR"
+      verify_command "code" "code --version" ".*"
+      
+      # Resumo Final
+      echo "$SEPARATOR"
+      if [ $FAIL_COUNT -eq 0 ]; then
+          echo "🎉 RESULTADO FINAL: Todas as verificações de comandos básicos foram bem-sucedidas."
+      else
+          echo "⚠️ RESULTADO FINAL: $FAIL_COUNT falha(s) detectada(s). Verifique os programas com ❌."
+      fi
+      echo "=================================================="
+      
+      echo "⚠️ RECOMENDAÇÃO: Faça logout e login novamente para ativar as permissões do Docker e o NVM."
+      EOF
+
+    # Executa o script de verificação como 'testuser'
+    - curtin in-target -- chmod +x /home/testuser/verify_tools.sh
+    - curtin in-target -- runuser -l testuser -c '/home/testuser/verify_tools.sh'
     
   # CORREÇÃO 3: 'power-state' deve ser de nível superior
   power-state:
