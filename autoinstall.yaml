@@ -84,9 +84,10 @@ autoinstall:
     - curtin in-target -- usermod -aG docker danielavita
 
     # 3. NVM (Node Version Manager) e Node.js 18
-    # Executado como danielavita para instalar no seu diretório home.
+    # CORREÇÃO: Usando o literal block scalar (|) para evitar erros de indentação YAML em scripts multi-linha.
     - curtin in-target -- echo "[INFO] Instalando NVM e Node.js 18 para danielavita..."
-    - curtin in-target -- su - danielavita -c '
+    - |
+      curtin in-target -- su - danielavita -c '
         curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
         export NVM_DIR="/home/danielavita/.nvm"
         # Tenta carregar o NVM no ambiente de subshell e instala o Node 18
@@ -105,8 +106,10 @@ autoinstall:
     - curtin in-target -- rm "$DOTNET_INSTALLER_PATH"
 
     # 5. Instalação de Extensões do VS Code (A snap 'code' deve estar disponível)
+    # CORREÇÃO: Usando o literal block scalar (|) para evitar erros de indentação YAML em scripts multi-linha.
     - curtin in-target -- echo "[INFO] Instalando extensões do VS Code (executando como danielavita)..."
-    - curtin in-target -- su - danielavita -c '
+    - |
+      curtin in-target -- su - danielavita -c '
         if command -v code &> /dev/null; then
             EXTENSIONS=(
                 ms-dotnettools.vscode-dotnet-runtime
