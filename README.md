@@ -6,10 +6,13 @@ sudo apt update && sudo apt install -y curl wget || true && \
 
 DBeaver:
 
+# 1. Atualiza e instala wget (e outros pacotes de dependência que podem ser úteis)
 sudo apt update && sudo apt install -y wget apt-transport-https
-DBEAVER_DEB_FILE="$HOME/dbeaver-ce_latest_amd64.deb"
-wget https://dbeaver.io/files/dbeaver-ce_latest_amd64.deb -O "$DBEAVER_DEB_FILE"
-sudo dpkg -i "$DBEAVER_DEB_FILE"
-sudo apt install -f -y
-rm "$DBEAVER_DEB_FILE"
+
+# 2. Define a variável, baixa, instala o .deb e limpa, TUDO SEPARADO
+DBEAVER_DEB_FILE="$HOME/dbeaver-ce_latest_amd64.deb" && \
+wget https://dbeaver.io/files/dbeaver-ce_latest_amd64.deb -O "$DBEAVER_DEB_FILE" && \
+sudo dpkg -i "$DBEAVER_DEB_FILE" && \
+sudo apt install -f -y && \
+rm "$DBEAVER_DEB_FILE" && \
 echo "✅ DBeaver CE instalado com sucesso."
