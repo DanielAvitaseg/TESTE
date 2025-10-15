@@ -3,7 +3,7 @@ autoinstall:
   version: 1
   
   # ====================================================================
-  # CONFIGURAÇÃO DE ARMAZENAMENTO (LVM sobre LUKS no /dev/nvme0n1)
+  # CONFIGURAÇÃO DE ARMAZENAMENTO (LUKS/LVM no /dev/nvme0n1)
   # ====================================================================
   storage:
     wipe: all
@@ -21,11 +21,7 @@ autoinstall:
   identity:
     hostname: notebook-ubuntu
     username: testuser
-    # Hash SHA-512 da senha
     password: "$6$EAyehhfqepzaGX78$k4Qceki0nxJKS2.ZxcWyWjn7db3p7/0Qu.S6pr32pIqVpzfFmwnOj/.XKgY6x3ADG077lE.DoNwMpXZ2aXr3q." 
-    
-    # CORREÇÃO CRUCIAL: Força a habilitação do login por senha (SSH)
-    # Isso garante que a senha acima funcione após o boot.
     ssh_pwauth: true
     
   locale: pt_BR
@@ -33,57 +29,159 @@ autoinstall:
   
   keyboard:
     layout: br
-    # A variante 'abnt2' foi removida, pois 'br' é suficiente.
     
-  # Instala o servidor SSH para poder gerenciar remotamente
   ssh:
     install-server: true
 
   # ====================================================================
-  # PÓS-INSTALAÇÃO E EXECUÇÃO DE SCRIPTS
+  # 1. LATE-COMMANDS (Executado como ROOT, no sistema de destino)
+  # Instala pacotes do sistema (apt, tar, ln, etc.)
   # ====================================================================
   late-commands:
-    # 1. Atualização do sistema recém-instalado
     - curtin in-target -- apt update
     - curtin in-target -- apt upgrade -y
     
-    # 2. INSTALAÇÃO DE PROGRAMAS VIA SCRIPT REMOTO E DBEAVER
+    # Executa a parte do script que requer privilégios de ROOT e instala no SISTEMA
     - |
       curtin in-target -- bash -c <<'EOF'
+        echo "🛠️ Iniciando a instalação de pacotes de sistema (ROOT)..."
+
+        # --- 1. PREPARAÇÃO GERAL ---
+        sudo apt update -y
+        sudo apt install -y apt-transport-https ca-certificates curl software-properties-common wget gpg lsb-release
+
+        # --- 2. INSTALAÇÃO DO DBEAVER CE ---
+        echo "--- Instalando DBeaver CE ---"
+        echo "deb https://dbeaver.io/debs/dbeaver-ce /" | sudo tee /etc/apt/sources.list.d/dbeaver.list > /dev/null
+        wget -O - https://dbeaver.io/debs/dbeaver.gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/dbeaver.gpg > /dev/null
+        sudo apt update
+        sudo apt install -y dbeaver-ce
+        echo "✅ DBeaver CE instalado."
+
+        # --- 3. INSTALAÇÃO DO DOCKER & DOCKER COMPOSE ---
+        echo "--- Instalando Docker ---"
+        sudo install -m 0755 -d /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        sudo chmod a+r /etc/apt/keyrings/docker.gpg
+        VERSION_CODENAME=$(lsb_release -cs)
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $VERSION_CODENAME stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+        sudo apt update
+        sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+        DOCKER_COMPOSE_VERSION="1.29.2"
+        sudo curl -L "https://github.com/docker/compose/releases/download/$DOCKER_COMPOSE_VERSION/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
+        sudo systemctl enable docker
         
-        # O sistema de destino precisa de curl e wget para os downloads
-        sudo apt update && sudo apt install -y curl wget || true
+        # O comando abaixo adiciona o grupo docker, mas a atribuição do usuário deve ser feita
+        # pelo useradd do instalador. Para garantir que o usuário 'testuser' seja adicionado,
+        # vamos usar um 'late-command' específico:
+        sudo groupadd docker || true # Cria o grupo se nao existir
+        sudo usermod -aG docker testuser
+        echo "✅ Docker instalado."
+
+        # --- 6. INSTALAÇÃO DO POSTMAN (Sistema) ---
+        echo "--- Instalando Postman ---"
+        POSTMAN_URL="https://dl.pstmn.io/download/latest/linux64"
+        POSTMAN_TAR="/tmp/postman.tar.gz"
+
+        wget "$POSTMAN_URL" -O "$POSTMAN_TAR"
+        sudo tar -xzf "$POSTMAN_TAR" -C /opt
+        sudo ln -sf /opt/Postman/Postman /usr/bin/postman
+        rm "$POSTMAN_TAR"
+
+        # Cria o atalho .desktop
+        sudo tee /usr/share/applications/postman.desktop > /dev/null << END_POSTMAN_DESKTOP
+[Desktop Entry]
+Type=Application
+Name=Postman
+Icon=/opt/Postman/app/resources/app/assets/icon.png
+Exec="/opt/Postman/Postman"
+Comment=Postman Desktop App
+Categories=Development;Code;
+END_POSTMAN_DESKTOP
+        echo "✅ Postman instalado."
+
+        # --- 7. INSTALAÇÃO DO SLACK ---
+        echo "--- Instalando Slack ---"
+        SLACK_URL="https://downloads.slack-edge.com/desktop-releases/linux/x64/4.46.101/slack-desktop-4.46.101-amd64.deb"
+        SLACK_DEB="/tmp/slack.deb"
+
+        wget "$SLACK_URL" -O "$SLACK_DEB"
+        sudo apt install "$SLACK_DEB" -y
+        rm "$SLACK_DEB"
+        echo "✅ Slack instalado."
+
+        # --- 8. INSTALAÇÃO DO VS CODE ---
+        echo "--- Instalando VS Code ---"
+        curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /tmp/microsoft.gpg
+        sudo install -o root -g root -m 644 /tmp/microsoft.gpg /etc/apt/keyrings/
+        sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/vscode stable main" > /etc/apt/sources.list.d/vscode.list'
+        rm /tmp/microsoft.gpg
+        sudo apt update
+        sudo apt install -y code
+        echo "✅ VS Code instalado."
         
-        echo "Executando script remoto install.sh..."
-        
-        # Baixa e executa o script remoto
-        (curl -fsSL https://raw.githubusercontent.com/DanielAvitaseg/TESTE/main/install.sh 2>/dev/null || \
-         wget -O - https://raw.githubusercontent.com/DanielAvitaseg/TESTE/main/install.sh 2>/dev/null) | bash
-        
-        echo "✅ Script remoto executado com sucesso."
-
-        # ==========================================================
-        # Instalação do DBeaver CE
-        # ==========================================================
-        DBEAVER_DEB_FILE="/tmp/dbeaver-ce_latest_amd64.deb"
-
-        echo "Iniciando instalação do DBeaver..."
-
-        # Instala dependências e baixa o pacote .deb
-        sudo apt install -y apt-transport-https 
-        wget https://dbeaver.io/files/dbeaver-ce_latest_amd64.deb -O "$DBEAVER_DEB_FILE" 
-
-        # Instala e resolve dependências (crucial para pacotes .deb)
-        sudo dpkg -i "$DBEAVER_DEB_FILE" 
-        sudo apt install -f -y 
-
-        # Limpeza
-        rm "$DBEAVER_DEB_FILE" 
-        
-        echo "✅ DBeaver CE instalado com sucesso."
-
+        echo "🎉 Instalação de pacotes de sistema concluída."
 EOF
-  # 3. Ação final (Reinicialização)
+
+  # 2. Ação final
   power-state:
     delay: 5
     mode: reboot
+
+  # ====================================================================
+  # 3. USER-DATA (Executado no PRIMEIRO BOOT, como 'testuser')
+  # Configurações de usuário (NVM, .NET SDK, Extensões VS Code)
+  # ====================================================================
+  user-data:
+    runcmd:
+      - echo "🛠️ Iniciando configuração de ambiente do usuário (testuser)..."
+      
+      # O runcmd é executado como root. Precisamos usar 'su -' para executar os comandos
+      # que dependem do $HOME do usuário e variáveis de ambiente (como NVM).
+      - su - testuser -c '
+        # --- 4. INSTALAÇÃO DO .NET SDK 6.0 ---
+        echo "--- Instalando .NET SDK 6.0 (usuário) ---"
+        DOTNET_INSTALLER_PATH="$HOME/dotnet-install.sh"
+        wget https://dot.net/v1/dotnet-install.sh -O "$DOTNET_INSTALLER_PATH"
+        chmod +x "$DOTNET_INSTALLER_PATH"
+        "$DOTNET_INSTALLER_PATH" --channel 6.0
+        rm "$DOTNET_INSTALLER_PATH"
+        echo "✅ .NET SDK 6.0 instalado (local)."
+        
+        # --- 5. INSTALAÇÃO DO NVM (Node Version Manager) e Node.js 18 ---
+        echo "--- Instalando NVM e Node.js 18 (usuário) ---"
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+        . "$HOME/.bashrc" 2>/dev/null || . "$HOME/.zshrc" 2>/dev/null
+        if command -v nvm &> /dev/null; then
+            nvm install 18
+            nvm use 18
+        fi
+        echo "✅ NVM/Node.js 18 instalados."
+
+        # --- 8. INSTALAÇÃO DAS EXTENSÕES DO VS CODE (usuário) ---
+        echo "--- Instalando extensões do VS Code ---"
+        if command -v code &> /dev/null; then
+            EXTENSIONS=(
+                ms-dotnettools.vscode-dotnet-runtime
+                ms-dotnettools.csharp
+                Angular.ng-template
+                johnpapa.angular2
+                fernandoescolar.vscode-solution-explorer
+                esbenp.prettier-vscode
+                ms-dotnettools.vscodeintellicode-csharp
+                dbaeumer.vscode-eslint
+                rangav.vscode-thunder-client
+            )
+            for EXT in "${EXTENSIONS[@]}"; do
+                code --install-extension "$EXT" --force
+            done
+        fi
+        echo "✅ Extensões VS Code instaladas."
+        
+        echo "--- 🔎 FIM DA CONFIGURAÇÃO DE USUÁRIO ---"
+      '
