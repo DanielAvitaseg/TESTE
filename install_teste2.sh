@@ -25,7 +25,7 @@ autoinstall:
     hostname: notebook-ubuntu
     username: testuser
     # Hash SHA-512 da senha para o usuário 'testuser' (Melhor Prática)
-    password: "$6$EAyehhfqepzaGX78$k4Qceki0nxJKS2.ZxcWyWjn7db3p7/0Qu.S6pr32pIqVpzfFmwnOj/.XKgY6x3ADG077lE.DoNwMpXZ2aXr3q." 
+    password: "$6$7g6AHZxM7mMAj6P.$Mhlle0BXegX5kLfA5RN5WztQ8m/yQ6PQlsv5i5eO2BG4BFt2RzNhQvm88TmOxLaob6CdeIvL/CPEpOsAQzuBh." 
     
   locale: pt_BR
   timezone: America/Sao_Paulo
