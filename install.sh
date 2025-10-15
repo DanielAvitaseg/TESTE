@@ -3,9 +3,10 @@
 
 echo "🛠️ Iniciando a instalação das ferramentas de desenvolvimento..."
 
-# --- 1. PREPARAÇÃO GERAL ---
-echo "--- 1. Preparando o sistema (Update e pacotes base) ---"
+# --- 1. PREPARAÇÃO GERAL (CURL GARANTIDO) ---
+echo "--- 1. Preparando o sistema (Update e pacotes base, incluindo curl) ---"
 sudo apt update -y
+# Instala todos os pacotes essenciais, incluindo curl, wget e gpg.
 sudo apt install -y apt-transport-https ca-certificates curl software-properties-common wget gpg lsb-release
 
 # --- 2. INSTALAÇÃO DO DBEAVER CE ---
@@ -152,7 +153,6 @@ echo -n "Verificando DBeaver CE... "
 if [ -f "$DOCKER_DESKTOP_VERIFY" ]; then
     echo "✅ [OK] (Atalho .desktop encontrado)"
 else
-    # Verifica o executável como fallback
     if [ -x "/usr/bin/dbeaver-ce" ]; then
         echo "⚠️ [AVISO] Atalho não encontrado, mas executável DBeaver existe em /usr/bin/."
     else
@@ -192,12 +192,10 @@ echo -n "Verificando NVM... "
 if [ -f "$NVM_DIR_CHECK" ]; then
     echo "✅ [OK] (Script nvm.sh encontrado)"
     
-    # Tentativa de carregar NVM novamente para verificação
     export NVM_DIR="$HOME/.nvm"
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
     echo -n "Verificando Node.js 18... "
-    # O 'nvm' deve garantir que o node esteja na PATH para o próximo comando
     if command -v node &> /dev/null && [[ $(node -v 2>&1) =~ v18 ]]; then
         echo "✅ [OK] (Versão: $(node -v 2>&1))"
     else
