@@ -17,10 +17,10 @@ autoinstall:
   # CONFIGURAÇÕES DE SISTEMA (Identidade e Localização)
   # ====================================================================
   identity:
-    # Usuário atualizado para danielavita
+    # Usuário: danielavita (Conforme definido nos comandos)
     hostname: notebook-ubuntu
     username: danielavita
-    # Usando o hash fornecido anteriormente
+    # Senha criptografada
     password: "$6$EAyehhfqepzaGX78$k4Qceki0nxJKS2.ZxcWyWjn7db3p7/0Qu.S6pr32pIqVpzfFmwnOj/.XKgY6x3ADG077lE.DoNwMpXZ2aXr3q." 
     
   locale: pt_BR
@@ -57,7 +57,7 @@ autoinstall:
       classic: false
     - name: code # VS Code
       channel: stable
-      classic: true # 'classic' é necessário para o VS Code
+      classic: true
     - name: dbeaver-ce
       channel: stable
       classic: false
@@ -79,12 +79,19 @@ autoinstall:
     - curtin in-target -- apt upgrade -y
     
     # 2. Configuração do Docker (Adiciona danielavita ao grupo)
-    - curtin in-target -- echo "[INFO] Adicionando danielavita ao grupo docker..."
-    - curtin in-target -- groupadd docker || true
-    - curtin in-target -- usermod -aG docker danielavita
+    - curtin in-target -- echo "[INFO] Configurando Docker para danielavita..."
+    # CORREÇÃO: Usamos um bloco sh -c com sleep para dar tempo ao sistema
+    # de finalizar a criação do usuário 'danielavita' antes de executar 'usermod'.
+    - |
+      curtin in-target -- sh -c '
+        echo "Aguardando 5 segundos para garantir que o usuário danielavita esteja pronto..."
+        sleep 5 
+        groupadd docker || true
+        usermod -aG docker danielavita
+        echo "Usuário danielavita adicionado ao grupo docker."
+      '
 
     # 3. NVM (Node Version Manager) e Node.js 18
-    # CORREÇÃO: Usando o literal block scalar (|) para evitar erros de indentação YAML em scripts multi-linha.
     - curtin in-target -- echo "[INFO] Instalando NVM e Node.js 18 para danielavita..."
     - |
       curtin in-target -- su - danielavita -c '
@@ -106,7 +113,6 @@ autoinstall:
     - curtin in-target -- rm "$DOTNET_INSTALLER_PATH"
 
     # 5. Instalação de Extensões do VS Code (A snap 'code' deve estar disponível)
-    # CORREÇÃO: Usando o literal block scalar (|) para evitar erros de indentação YAML em scripts multi-linha.
     - curtin in-target -- echo "[INFO] Instalando extensões do VS Code (executando como danielavita)..."
     - |
       curtin in-target -- su - danielavita -c '
@@ -122,7 +128,7 @@ autoinstall:
                 dbaeumer.vscode-eslint
                 rangav.vscode-thunder-client
             )
-            for EXT in "${EXTENSIONS[@]}"; do
+            for EXT in "${EXTENSÕES[@]}"; do
                 code --install-extension "$EXT" --force
             done
         fi
