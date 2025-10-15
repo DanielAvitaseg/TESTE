@@ -82,7 +82,7 @@ EOF
 
 # --- 7. INSTALAÇÃO DO SLACK ---
 echo "--- 7. Instalando Slack ---"
-SLACK_URL="https://downloads.slack-edge.com/releases/linux/4.33.84/prod/x64/slack-desktop-4.33.84-amd64.deb"
+SLACK_URL="https://downloads.slack-edge.com/desktop-releases/linux/x64/4.46.101/slack-desktop-4.46.101-amd64.deb"
 SLACK_DEB="$HOME/slack.deb"
 
 wget "$SLACK_URL" -O "$SLACK_DEB"
