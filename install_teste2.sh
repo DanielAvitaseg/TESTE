@@ -16,7 +16,7 @@ autoinstall:
         path: /dev/nvme0n1
       
       # ⚠️ SENHA DE CRIPTOGRAFIA (LUKS): O instalador irá pedir esta senha no boot
-      password: Senhafoda123@ 
+      password: FormatAvita@@! 
 
   # ====================================================================
   # CONFIGURAÇÕES DE SISTEMA E USUÁRIO
