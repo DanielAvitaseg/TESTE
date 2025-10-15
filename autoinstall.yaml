@@ -78,9 +78,8 @@ autoinstall:
     - curtin in-target -- apt update
     - curtin in-target -- apt upgrade -y
     
-    # 2. Configuração do Docker (Adiciona danielavita ao grupo)
-    - curtin in-target -- echo "[INFO] Configurando Docker para danielavita..."
-    # CORREÇÃO: Implementando um loop de verificação para garantir que o usuário exista
+    # 2. Configuração do Docker (VERIFICAÇÃO DE USUÁRIO ROBUSTA)
+    - curtin in-target -- echo "[INFO] Configurando Docker para danielavita (Verificação de Usuário)..."
     - |
       curtin in-target -- sh -c '
         echo "Iniciando verificação do usuário danielavita para configuração do Docker..."
@@ -100,31 +99,34 @@ autoinstall:
         exit 1
       '
 
-    # 3. NVM (Node Version Manager) e Node.js 18
-    - curtin in-target -- echo "[INFO] Instalando NVM e Node.js 18 para danielavita..."
+    # 3. INSTALAÇÃO CONSOLIDADA (NVM, Node.js 18, .NET 6.0/8.0 e Extensões VS Code)
+    - curtin in-target -- echo "[INFO] Iniciando instalação consolidada de NVM, Node.js, .NET e Extensões VS Code (como danielavita)..."
     - |
       curtin in-target -- runuser -l danielavita -c '
+        # --- NVM (Node Version Manager) ---
+        echo "Instalando NVM..."
         curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+        
         export NVM_DIR="/home/danielavita/.nvm"
-        # Tenta carregar o NVM no ambiente de subshell e instala o Node 18
-        [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+        # Garante que o ambiente NVM seja carregado para comandos subsequentes.
+        . "$NVM_DIR/nvm.sh" 2>/dev/null || . "$NVM_DIR/bash_completion" 2>/dev/null
+
+        echo "Instalando Node.js 18..."
         nvm install 18
         nvm use 18
-      '
-      
-    # 4. .NET SDK 6.0 and 8.0 (Instalação no ambiente do usuário)
-    - curtin in-target -- echo "[INFO] Instalando .NET SDKs (6.0 e 8.0) para danielavita..."
-    - curtin in-target -- DOTNET_INSTALLER_PATH="/home/danielavita/dotnet-install.sh"
-    - curtin in-target -- wget https://dot.net/v1/dotnet-install.sh -O "$DOTNET_INSTALLER_PATH"
-    - curtin in-target -- chmod +x "$DOTNET_INSTALLER_PATH"
-    - curtin in-target -- runuser -l danielavita -c '"$DOTNET_INSTALLER_PATH" --channel 6.0'
-    - curtin in-target -- runuser -l danielavita -c '"$DOTNET_INSTALLER_PATH" --channel 8.0'
-    - curtin in-target -- rm "$DOTNET_INSTALLER_PATH"
-
-    # 5. Instalação de Extensões do VS Code (A snap 'code' deve estar disponível)
-    - curtin in-target -- echo "[INFO] Instalando extensões do VS Code (executando como danielavita)..."
-    - |
-      curtin in-target -- runuser -l danielavita -c '
+        
+        # --- .NET SDKs 6.0 e 8.0 ---
+        echo "Instalando .NET SDKs (6.0 e 8.0)..."
+        DOTNET_INSTALLER_PATH="/home/danielavita/dotnet-install.sh"
+        wget https://dot.net/v1/dotnet-install.sh -O "$DOTNET_INSTALLER_PATH"
+        chmod +x "$DOTNET_INSTALLER_PATH"
+        
+        "$DOTNET_INSTALLER_PATH" --channel 6.0
+        "$DOTNET_INSTALLER_PATH" --channel 8.0
+        rm "$DOTNET_INSTALLER_PATH"
+        
+        # --- Extensões do VS Code ---
+        echo "Instalando extensões do VS Code..."
         if command -v code &> /dev/null; then
             EXTENSIONS=(
                 ms-dotnettools.vscode-dotnet-runtime
@@ -137,11 +139,14 @@ autoinstall:
                 dbaeumer.vscode-eslint
                 rangav.vscode-thunder-client
             )
-            # A variável EXTENSIONS é usada para iterar.
             for EXT in "${EXTENSIONS[@]}"; do
                 code --install-extension "$EXT" --force
             done
+        else
+            echo "Aviso: VS Code (snap code) não está disponível para instalar extensões."
         fi
+        
+        echo "Instalação consolidada concluída."
       '
       
   power-state:
