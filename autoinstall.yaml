@@ -78,15 +78,16 @@ autoinstall:
     - curtin in-target -- apt update
     - curtin in-target -- apt upgrade -y
     
-    # 2. Configuração do Docker (VERIFICAÇÃO DE USUÁRIO ROBUSTA)
-    - curtin in-target -- echo "[INFO] Configurando Docker para danielavita (Verificação de Usuário)..."
+    # 2. Configuração do Docker (VERIFICAÇÃO DE USUÁRIO ROBUSTA - 5 MINUTOS)
+    - curtin in-target -- echo "[INFO] Configurando Docker para danielavita (Verificação de Usuário - Máx. 5 minutos)..."
     - |
       curtin in-target -- sh -c '
-        echo "Iniciando verificação do usuário danielavita para configuração do Docker..."
-        MAX_ATTEMPTS=6
+        echo "Iniciando verificação do usuário danielavita. Máximo de 5 minutos (300 segundos) de espera."
+        MAX_ATTEMPTS=60  # 60 tentativas * 5 segundos = 300 segundos (5 minutos)
         for i in $(seq 1 $MAX_ATTEMPTS); do
+          # Verifica se o usuário danielavita existe.
           if getent passwd danielavita > /dev/null; then
-            echo "Usuário danielavita encontrado na tentativa $i. Prosseguindo."
+            echo "Usuário danielavita encontrado na tentativa $i. Prosseguindo com o Docker."
             groupadd docker || true
             usermod -aG docker danielavita
             echo "Usuário danielavita adicionado ao grupo docker."
@@ -95,11 +96,12 @@ autoinstall:
           echo "Usuário danielavita não encontrado. Tentativa $i/$MAX_ATTEMPTS. Aguardando 5 segundos..."
           sleep 5
         done
-        echo "Erro: O usuário danielavita não foi encontrado após 30 segundos. A configuração do Docker falhou."
+        echo "Erro CRÍTICO: O usuário danielavita não foi encontrado após 5 minutos. A configuração do Docker falhou."
         exit 1
       '
 
     # 3. INSTALAÇÃO CONSOLIDADA (NVM, Node.js 18, .NET 6.0/8.0 e Extensões VS Code)
+    # Este bloco utiliza o 'runuser' que agora deve ter um usuário danielavita existente.
     - curtin in-target -- echo "[INFO] Iniciando instalação consolidada de NVM, Node.js, .NET e Extensões VS Code (como danielavita)..."
     - |
       curtin in-target -- runuser -l danielavita -c '
