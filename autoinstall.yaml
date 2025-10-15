@@ -22,7 +22,6 @@ autoinstall:
     hostname: notebook-ubuntu
     username: testuser
     password: "$6$EAyehhfqepzaGX78$k4Qceki0nxJKS2.ZxcWyWjn7db3p7/0Qu.S6pr32pIqVpzfFmwnOj/.XKgY6x3ADG077lE.DoNwMpXZ2aXr3q." 
-    ssh_pwauth: true
     
   locale: pt_BR
   timezone: America/Sao_Paulo
@@ -30,8 +29,6 @@ autoinstall:
   keyboard:
     layout: br
     
-  ssh:
-    install-server: true
 
   # ====================================================================
   # 1. LATE-COMMANDS (Executado como ROOT, no sistema de destino)
