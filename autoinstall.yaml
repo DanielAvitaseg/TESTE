@@ -11,7 +11,7 @@ autoinstall:
       name: lvm
       match: 
         path: /dev/nvme0n1
-      password: Senhafoda123@ 
+      password: Avita@123
 
   # ====================================================================
   # CONFIGURAÇÕES DE SISTEMA
@@ -20,7 +20,7 @@ autoinstall:
     hostname: notebook-ubuntu
     username: testuser
     # Usando o hash fornecido anteriormente, que é o formato mais seguro
-    password: "$6$EAyehhfqepzaGX78$k4Qceki0nxJKS2.ZxcWyWjn7db3p7/0Qu.S6pr32pIqVpzfFmwnOj/.XKgY6x3ADG077lE.DoNwMpXZ2aXr3q." 
+    password: "$6$4iiQXM9cwsm/q.kX$6WS7y4mh8yRr9dQIKUtoszbHo/TYvTJ9brFGbJeL1qn7gf8yBSAUUAlDqCByKXlWgHC2WZNa65vyoSoiAknBi0" 
     
   # CORREÇÃO 1: 'package' não existe. Se precisar instalar pacotes
   # adicionais, use 'packages' (no plural). Se for apenas para instalar
