@@ -3,46 +3,51 @@ autoinstall:
   version: 1
   
   # ====================================================================
-  # CONFIGURAÇÃO DE ARMAZENAMENTO MAIS SIMPLES
-  # Usa o layout 'lvm' padrão do instalador no disco especificado,
-  # ativando a criptografia com uma senha.
+  # CONFIGURAÇÃO DE ARMAZENAMENTO (MAIS SIMPLES)
   # ====================================================================
   storage:
+    wipe: all
     layout:
       name: lvm
       match: 
-        # Garante que a instalação ocorra APENAS no disco /dev/nvme0n1
         path: /dev/nvme0n1
-      
-      # ⚠️ MUDE A SENHA! Use uma senha forte para o seu teste.
-      password: Senhafoda123@
+      password: Senhafoda123@ 
 
-  # Configurações obrigatórias para um autoinstall completo:
-  
-  # Define o usuário padrão para login após a instalação
+  # ====================================================================
+  # CONFIGURAÇÕES DE SISTEMA
+  # ====================================================================
   identity:
     hostname: notebook-ubuntu
     username: testuser
-    password: $6$EAyehhfqepzaGX78$k4Qceki0nxJKS2.ZxcWyWjn7db3p7/0Qu.S6pr32pIqVpzfFmwnOj/.XKgY6x3ADG077lE.DoNwMpXZ2aXr3q. # Substitua pelo hash de uma senha forte (ou use plaintext_password)
-    # plaintext_password: senha_login_simples
-
-  # Define o pacote a ser instalado (server é o padrão)
-  package:
-    name: ubuntu-server
+    # Usando o hash fornecido anteriormente, que é o formato mais seguro
+    password: "$6$EAyehhfqepzaGX78$k4Qceki0nxJKS2.ZxcWyWjn7db3p7/0Qu.S6pr32pIqVpzfFmwnOj/.XKgY6x3ADG077lE.DoNwMpXZ2aXr3q." 
+    
+  # CORREÇÃO 1: 'package' não existe. Se precisar instalar pacotes
+  # adicionais, use 'packages' (no plural). Se for apenas para instalar
+  # o Ubuntu Server, esta seção pode ser omitida.
+  # Se você quer o desktop, você instalaria o pacote 'ubuntu-desktop'.
+  # Neste caso, vamos instalar o servidor padrão:
   
-  # Configurações regionais
+  # Instalação padrão (não requer a chave 'package')
+  # packages:
+  #   - ubuntu-server
+  
   locale: pt_BR
-  keyboard:
-    layout: br
-    variant: abnt2
   timezone: America/Sao_Paulo
   
-  # Comandos que serão executados após a instalação (exemplo)
+  # CORREÇÃO 2: Simplificação do teclado
+  keyboard:
+    layout: br
+    # 'variant: abnt2' removido para evitar o erro 'Unknown keyboard variant'
+
+  # ====================================================================
+  # PÓS-INSTALAÇÃO E AÇÃO FINAL
+  # ====================================================================
   late-commands:
     - curtin in-target -- apt update
     - curtin in-target -- apt upgrade -y
     
-  # Ação final
+  # CORREÇÃO 3: 'power-state' deve ser de nível superior
   power-state:
     delay: 5
     mode: reboot
