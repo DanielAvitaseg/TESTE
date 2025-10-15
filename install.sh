@@ -1,97 +1,74 @@
 #!/bin/bash
-# Script de Instalação Unificado para Ferramentas de Desenvolvimento (Debian/Ubuntu)
-#
-# Programas Incluídos:
-# 1. DBeaver CE
-# 2. Docker & Docker Compose
-# 3. .NET SDK 6.0 (Instalado apenas localmente - $HOME/.dotnet)
-# 4. NVM (Node Version Manager) e Node.js 18
-# 5. Postman
-# 6. Slack
-# 7. VS Code (com extensões específicas)
+# Script de Instalação Unificado e Auto-Verificação para Ferramentas de Desenvolvimento (Debian/Ubuntu)
 
 echo "🛠️ Iniciando a instalação das ferramentas de desenvolvimento..."
 
 # --- 1. PREPARAÇÃO GERAL ---
 echo "--- 1. Preparando o sistema (Update e pacotes base) ---"
 sudo apt update -y
-sudo apt install -y apt-transport-https ca-certificates curl software-properties-common wget gpg
-
----
+sudo apt install -y apt-transport-https ca-certificates curl software-properties-common wget gpg lsb-release
 
 # --- 2. INSTALAÇÃO DO DBEAVER CE ---
 echo "--- 2. Instalando DBeaver CE ---"
-echo "deb https://dbeaver.io/debs/dbeaver-ce /" | sudo tee /etc/apt/sources.list.d/dbeaver.list
-wget -O - https://dbeaver.io/debs/dbeaver.gpg.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/dbeaver.gpg > /dev/null
+DOCKER_DESKTOP_TARGET="/usr/share/applications/dbeaver-ce.desktop"
+
+echo "deb https://dbeaver.io/debs/dbeaver-ce /" | sudo tee /etc/apt/sources.list.d/dbeaver.list > /dev/null
+wget -O - https://dbeaver.io/debs/dbeaver.gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/dbeaver.gpg > /dev/null
 sudo apt update
 sudo apt install -y dbeaver-ce
 
----
-
 # --- 3. INSTALAÇÃO DO DOCKER & DOCKER COMPOSE ---
 echo "--- 3. Instalando Docker e Docker Compose ---"
-# Adiciona a chave GPG do Docker
+sudo install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 sudo chmod a+r /etc/apt/keyrings/docker.gpg
-# Adiciona o repositório do Docker (Referência ao focal/Ubuntu 20.04 - Ajuste se precisar de outra versão)
+VERSION_CODENAME=$(lsb_release -cs)
 echo \
-  "deb [arch=\"$(dpkg --print-architecture)\" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-  focal stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $VERSION_CODENAME stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 sudo apt update
-sudo apt install -y docker-ce docker-ce-cli containerd.io
-sudo systemctl enable docker
-# Configura permissões para o usuário atual
-if ! grep -q "docker" /etc/group; then
-    sudo groupadd docker
-fi
-sudo usermod -aG docker "$USER"
-echo "⚠️ OBS: Você precisará fazer logout e login novamente para que as permissões do Docker entrem em vigor."
-# Instala Docker Compose
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
 DOCKER_COMPOSE_VERSION="1.29.2"
 sudo curl -L "https://github.com/docker/compose/releases/download/$DOCKER_COMPOSE_VERSION/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 
----
+sudo systemctl enable docker
+if ! grep -q "docker" /etc/group; then
+    sudo groupadd docker
+fi
+sudo usermod -aG docker "$USER"
 
 # --- 4. INSTALAÇÃO DO .NET SDK 6.0 ---
 echo "--- 4. Instalando .NET SDK 6.0 ---"
-wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
-chmod +x ./dotnet-install.sh
-./dotnet-install.sh --channel 6.0
-rm dotnet-install.sh
-echo ".NET SDK 6.0 instalado em $HOME/.dotnet. Para usá-lo globalmente, adicione $HOME/.dotnet à sua variável PATH."
-
----
+DOTNET_INSTALLER_PATH="$HOME/dotnet-install.sh"
+wget https://dot.net/v1/dotnet-install.sh -O "$DOTNET_INSTALLER_PATH"
+chmod +x "$DOTNET_INSTALLER_PATH"
+"$DOTNET_INSTALLER_PATH" --channel 6.0
+rm "$DOTNET_INSTALLER_PATH"
 
 # --- 5. INSTALAÇÃO DO NVM (Node Version Manager) e Node.js 18 ---
 echo "--- 5. Instalando NVM e Node.js 18 ---"
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash # Versão mais recente
-export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # Carrega nvm
-# Tenta carregar as novas variáveis no ambiente atual (Pode falhar em alguns shells)
-. "$HOME/.bashrc" 2>/dev/null || . "$HOME/.zshrc" 2>/dev/null || echo "Aviso: Não foi possível recarregar o shell. Você precisará iniciar um novo terminal para usar 'nvm'."
-# Instala e usa Node 18
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+. "$HOME/.bashrc" 2>/dev/null || . "$HOME/.zshrc" 2>/dev/null
 if command -v nvm &> /dev/null; then
     nvm install 18
     nvm use 18
-else
-    echo "NVM não foi carregado corretamente. Por favor, abra um novo terminal e execute 'nvm install 18 && nvm use 18'."
 fi
-
----
 
 # --- 6. INSTALAÇÃO DO POSTMAN ---
 echo "--- 6. Instalando Postman ---"
-POSTMAN_URL=$(curl -s https://www.postman.com/downloads/ | grep -oP 'https://dl.pstmn.io/download/latest/linux64\?.*' | head -1) # Tenta pegar o link mais recente
-if [ -z "$POSTMAN_URL" ]; then
-    echo "Aviso: Não foi possível obter o link mais recente. Usando link fixo (Pode estar desatualizado)."
-    POSTMAN_URL="https://dl.pstmn.io/download/latest/linux64"
-fi
-wget "$POSTMAN_URL" -O postman.tar.gz
-sudo tar -xzf postman.tar.gz -C /opt
-sudo ln -sf /opt/Postman/Postman /usr/bin/postman # Usa -sf para forçar o link simbólico
-rm postman.tar.gz
-# Cria atalho no menu
+POSTMAN_URL="https://dl.pstmn.io/download/latest/linux64"
+POSTMAN_TAR="$HOME/postman.tar.gz"
+
+wget "$POSTMAN_URL" -O "$POSTMAN_TAR"
+sudo tar -xzf "$POSTMAN_TAR" -C /opt
+sudo ln -sf /opt/Postman/Postman /usr/bin/postman
+rm "$POSTMAN_TAR"
+
 sudo tee /usr/share/applications/postman.desktop > /dev/null << EOF
 [Desktop Entry]
 Type=Application
@@ -102,37 +79,26 @@ Comment=Postman Desktop App
 Categories=Development;Code;
 EOF
 
----
-
 # --- 7. INSTALAÇÃO DO SLACK ---
 echo "--- 7. Instalando Slack ---"
-# Tenta obter o link mais recente diretamente da página de download
-SLACK_URL=$(curl -s https://slack.com/intl/pt-br/downloads/linux | grep -oP 'https://downloads.slack-edge.com/releases/linux/.*\.deb' | head -1)
-if [ -z "$SLACK_URL" ]; then
-    echo "Aviso: Não foi possível obter o link mais recente. Usando link fixo (Pode estar desatualizado)."
-    SLACK_URL="https://downloads.slack-edge.com/releases/linux/4.33.84/prod/x64/slack-desktop-4.33.84-amd64.deb"
-fi
-wget "$SLACK_URL" -O slack.deb
-sudo dpkg -i slack.deb
-sudo apt --fix-broken install -y # Garante que dependências sejam instaladas
-rm slack.deb
+SLACK_URL="https://downloads.slack-edge.com/releases/linux/4.33.84/prod/x64/slack-desktop-4.33.84-amd64.deb"
+SLACK_DEB="$HOME/slack.deb"
 
----
+wget "$SLACK_URL" -O "$SLACK_DEB"
+sudo apt install "$SLACK_DEB" -y
+rm "$SLACK_DEB"
 
 # --- 8. INSTALAÇÃO DO VS CODE E EXTENSÕES ---
 echo "--- 8. Instalando VS Code e Extensões ---"
-# Adiciona chave e repositório do VS Code
 curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg
-sudo install -o root -g root -m 644 microsoft.gpg /etc/apt/trusted.gpg.d/
-sudo sh -c 'echo "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main" > /etc/apt/sources.list.d/vscode.list'
+sudo install -o root -g root -m 644 microsoft.gpg /etc/apt/keyrings/
+sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/vscode stable main" > /etc/apt/sources.list.d/vscode.list'
 rm microsoft.gpg
 sudo apt update
 sudo apt install -y code
 
-# Instala extensões do VS Code
 echo "Instalando extensões do VS Code..."
 if command -v code &> /dev/null; then
-    # Lista de extensões
     EXTENSIONS=(
         ms-dotnettools.vscode-dotnet-runtime
         ms-dotnettools.csharp
@@ -144,17 +110,132 @@ if command -v code &> /dev/null; then
         dbaeumer.vscode-eslint
         rangav.vscode-thunder-client
     )
-
     for EXT in "${EXTENSIONS[@]}"; do
-        echo "Instalando $EXT..."
-        code --install-extension "$EXT" --force # Adicionei --force para evitar problemas
+        code --install-extension "$EXT" --force
     done
-else
-    echo "Aviso: O comando 'code' não foi encontrado. Extensões do VS Code não instaladas."
 fi
 
-# --- FIM ---
+# =================================================================
+# === PARTE DE VERIFICAÇÃO AUTOMÁTICA ===============================
+# =================================================================
+
 echo ""
-echo "✅ Instalação concluída!"
-echo "⚠️ Lembre-se de sair e entrar novamente (ou 'newgrp docker' em um novo shell) para que as permissões do Docker funcionem."
-echo "⚠️ O NVM e o Node.js 18 devem estar disponíveis em um novo terminal."
+echo "--- 🔎 INICIANDO VERIFICAÇÃO DE INSTALAÇÃO DE FERRAMENTAS ---"
+
+FAIL_COUNT=0
+SEPARATOR="=================================================="
+
+# Função auxiliar para verificar comandos
+verify_command() {
+    local command_name="$1"
+    local verification_command="$2"
+    local expected_output_regex="$3"
+
+    echo -n "Verificando $command_name... "
+    if command -v "$command_name" &> /dev/null; then
+        output=$($verification_command 2>&1)
+        if [[ $output =~ $expected_output_regex ]]; then
+            echo "✅ [OK] (Versão: $(echo "$output" | head -n 1 | awk '{print $NF}'))"
+        else
+            echo "⚠️ [AVISO] Comando encontrado, mas a versão/saída não é clara."
+        fi
+    else
+        echo "❌ [FALHA] Comando não encontrado."
+        FAIL_COUNT=$((FAIL_COUNT + 1))
+    fi
+}
+
+# 1. DBeaver CE (Verificar existência do arquivo desktop)
+echo "$SEPARATOR"
+DOCKER_DESKTOP_VERIFY="/usr/share/applications/dbeaver-ce.desktop"
+echo -n "Verificando DBeaver CE... "
+if [ -f "$DOCKER_DESKTOP_VERIFY" ]; then
+    echo "✅ [OK] (Atalho .desktop encontrado)"
+else
+    # Verifica o executável como fallback
+    if [ -x "/usr/bin/dbeaver-ce" ]; then
+        echo "⚠️ [AVISO] Atalho não encontrado, mas executável DBeaver existe em /usr/bin/."
+    else
+        echo "❌ [FALHA] (Atalho ou Executável não encontrado.)"
+        FAIL_COUNT=$((FAIL_COUNT + 1))
+    fi
+fi
+
+# 2. Docker
+echo "$SEPARATOR"
+verify_command "docker" "docker --version" "Docker version"
+
+# 3. Docker Compose (Verificando o binário do v1)
+verify_command "docker-compose" "docker-compose --version" "docker-compose version"
+
+# 4. .NET SDK 6.0 (Apenas no diretório do usuário)
+echo "$SEPARATOR"
+DOTNET_PATH="$HOME/.dotnet/dotnet"
+echo -n "Verificando .NET SDK 6.0 (local)... "
+if [ -x "$DOTNET_PATH" ]; then
+    VERSION_OUTPUT=$("$DOTNET_PATH" --version 2>&1 | grep -E '^(6\.|7\.|8\.)')
+    if [ -n "$VERSION_OUTPUT" ]; then
+        echo "✅ [OK] (Versão: $VERSION_OUTPUT)"
+    else
+        echo "❌ [FALHA] Executável .NET encontrado, mas a versão 6.0+ não foi detectada."
+        FAIL_COUNT=$((FAIL_COUNT + 1))
+    fi
+else
+    echo "❌ [FALHA] Executável .NET não encontrado em $DOTNET_PATH."
+    FAIL_COUNT=$((FAIL_COUNT + 1))
+fi
+
+# 5. NVM e Node.js 18
+echo "$SEPARATOR"
+NVM_DIR_CHECK="$HOME/.nvm/nvm.sh"
+echo -n "Verificando NVM... "
+if [ -f "$NVM_DIR_CHECK" ]; then
+    echo "✅ [OK] (Script nvm.sh encontrado)"
+    
+    # Tentativa de carregar NVM novamente para verificação
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+    echo -n "Verificando Node.js 18... "
+    # O 'nvm' deve garantir que o node esteja na PATH para o próximo comando
+    if command -v node &> /dev/null && [[ $(node -v 2>&1) =~ v18 ]]; then
+        echo "✅ [OK] (Versão: $(node -v 2>&1))"
+    else
+        echo "⚠️ [AVISO] Node (ou Node 18) pode não estar carregado. Use 'nvm use 18' em um novo terminal."
+    fi
+else
+    echo "❌ [FALHA] NVM não encontrado."
+    FAIL_COUNT=$((FAIL_COUNT + 1))
+fi
+
+
+# 6. Postman
+echo "$SEPARATOR"
+POSTMAN_LINK="/usr/bin/postman"
+POSTMAN_DESKTOP_VERIFY="/usr/share/applications/postman.desktop"
+echo -n "Verificando Postman... "
+if [ -L "$POSTMAN_LINK" ] && [ -f "$POSTMAN_DESKTOP_VERIFY" ]; then
+    echo "✅ [OK] (Link e Atalho .desktop encontrados)"
+else
+    echo "❌ [FALHA] Link ou Atalho .desktop não encontrado."
+    FAIL_COUNT=$((FAIL_COUNT + 1))
+fi
+
+# 7. Slack
+echo "$SEPARATOR"
+verify_command "slack" "slack --version" "."
+
+# 8. VS Code
+echo "$SEPARATOR"
+verify_command "code" "code --version" ".*"
+
+# Resumo Final
+echo "$SEPARATOR"
+if [ $FAIL_COUNT -eq 0 ]; then
+    echo "🎉 RESULTADO FINAL: Todas as verificações de comandos básicos foram bem-sucedidas."
+else
+    echo "⚠️ RESULTADO FINAL: $FAIL_COUNT falha(s) detectada(s). Verifique os programas com ❌."
+fi
+echo "=================================================="
+
+echo "⚠️ RECOMENDAÇÃO: Faça logout e login novamente para ativar as permissões do Docker e o NVM."
