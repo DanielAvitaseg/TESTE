@@ -80,19 +80,28 @@ autoinstall:
     
     # 2. Configuração do Docker (Adiciona danielavita ao grupo)
     - curtin in-target -- echo "[INFO] Configurando Docker para danielavita..."
-    # CORREÇÃO: Aumentamos o sleep para 15s para garantir que o usuário exista.
+    # CORREÇÃO: Implementando um loop de verificação para garantir que o usuário exista
     - |
       curtin in-target -- sh -c '
-        echo "Aguardando 15 segundos para garantir que o usuário danielavita esteja pronto..."
-        sleep 15 
-        groupadd docker || true
-        usermod -aG docker danielavita
-        echo "Usuário danielavita adicionado ao grupo docker."
+        echo "Iniciando verificação do usuário danielavita para configuração do Docker..."
+        MAX_ATTEMPTS=6
+        for i in $(seq 1 $MAX_ATTEMPTS); do
+          if getent passwd danielavita > /dev/null; then
+            echo "Usuário danielavita encontrado na tentativa $i. Prosseguindo."
+            groupadd docker || true
+            usermod -aG docker danielavita
+            echo "Usuário danielavita adicionado ao grupo docker."
+            exit 0
+          fi
+          echo "Usuário danielavita não encontrado. Tentativa $i/$MAX_ATTEMPTS. Aguardando 5 segundos..."
+          sleep 5
+        done
+        echo "Erro: O usuário danielavita não foi encontrado após 30 segundos. A configuração do Docker falhou."
+        exit 1
       '
 
     # 3. NVM (Node Version Manager) e Node.js 18
     - curtin in-target -- echo "[INFO] Instalando NVM e Node.js 18 para danielavita..."
-    # CORREÇÃO: Trocamos 'su' por 'runuser' para maior compatibilidade no chroot.
     - |
       curtin in-target -- runuser -l danielavita -c '
         curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
@@ -108,14 +117,12 @@ autoinstall:
     - curtin in-target -- DOTNET_INSTALLER_PATH="/home/danielavita/dotnet-install.sh"
     - curtin in-target -- wget https://dot.net/v1/dotnet-install.sh -O "$DOTNET_INSTALLER_PATH"
     - curtin in-target -- chmod +x "$DOTNET_INSTALLER_PATH"
-    # CORREÇÃO: Trocamos 'su' por 'runuser'.
     - curtin in-target -- runuser -l danielavita -c '"$DOTNET_INSTALLER_PATH" --channel 6.0'
     - curtin in-target -- runuser -l danielavita -c '"$DOTNET_INSTALLER_PATH" --channel 8.0'
     - curtin in-target -- rm "$DOTNET_INSTALLER_PATH"
 
     # 5. Instalação de Extensões do VS Code (A snap 'code' deve estar disponível)
     - curtin in-target -- echo "[INFO] Instalando extensões do VS Code (executando como danielavita)..."
-    # CORREÇÃO: Trocamos 'su' por 'runuser'.
     - |
       curtin in-target -- runuser -l danielavita -c '
         if command -v code &> /dev/null; then
@@ -130,7 +137,7 @@ autoinstall:
                 dbaeumer.vscode-eslint
                 rangav.vscode-thunder-client
             )
-            # ATENÇÃO: Corrigindo variável de array em Português
+            # A variável EXTENSIONS é usada para iterar.
             for EXT in "${EXTENSIONS[@]}"; do
                 code --install-extension "$EXT" --force
             done
