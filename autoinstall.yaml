@@ -94,7 +94,6 @@ autoinstall:
     # 5. DEFINIÇÃO DO PAPEL DE PAREDE USANDO GSETTINGS (GNOME)
     # Roda os comandos gsettings no contexto do usuário 'testefinal'.
     - curtin in-target -- su - "${TARGET_USER}" -c "gsettings set org.gnome.desktop.background picture-uri file://${IMAGE_PATH}"
-    - curtin in-target -- su - "${TARGET_USER}" -c "gsettings set org.gnome.desktop.background picture-uri-dark file://${IMAGE_PATH}"
 
   power-state:
     delay: 5
