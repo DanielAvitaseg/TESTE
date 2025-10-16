@@ -73,27 +73,20 @@ autoinstall:
   # COMANDOS DE PÓS-INSTALAÇÃO (Configurações de Usuário, Extensões e Wallpaper)
   # Este bloco foi corrigido para resolver o erro de execução.
   # ====================================================================
-  late-commands:
-    # 1. Definição de Variáveis
-    - |
-      TARGET_USER="testefinal"
-      IMAGE_URL="https://i.ibb.co/cwtDVCS/Frame-6.png"
-      IMAGE_PATH="/home/${TARGET_USER}/Frame-6.png"
-      
-    # 2. Update/Upgrade inicial
+   late-commands:
+    # 1. Update/Upgrade inicial (Mantido)
     - curtin in-target -- apt update
     - curtin in-target -- apt upgrade -y
       
-    # 3. DOWNLOAD DA IMAGEM
-    # Usa 'sh -c' para garantir que as variáveis sejam resolvidas corretamente.
-    - curtin in-target -- sh -c "wget -O \"${IMAGE_PATH}\" \"${IMAGE_URL}\""
-    
-    # 4. GARANTIR PROPRIEDADE (CHOWN)
-    - curtin in-target -- chown "${TARGET_USER}":"${TARGET_USER}" "${IMAGE_PATH}"
+    # 2. DOWNLOAD DA IMAGEM E GARANTIA DE PERMISSÃO (SIMPLIFICADO)
+    # Baixa a imagem diretamente para /home/testefinal/Frame-6.png e garante que o proprietário seja o usuário.
+    # O comando é executado no shell do root, mas atua no diretório do usuário.
+    - curtin in-target -- sh -c "wget -O /home/testefinal/Frame-6.png https://i.ibb.co/cwtDVCS/Frame-6.png && chown testefinal:testefinal /home/testefinal/Frame-6.png"
       
-    # 5. DEFINIÇÃO DO PAPEL DE PAREDE USANDO GSETTINGS (GNOME)
-    # Roda os comandos gsettings no contexto do usuário 'testefinal'.
-    - curtin in-target -- su - "${TARGET_USER}" -c "gsettings set org.gnome.desktop.background picture-uri file://${IMAGE_PATH}"
+    # 3. DEFINIÇÃO DO PAPEL DE PAREDE (SIMPLIFICADO E ROBUSTO)
+    # Roda os comandos gsettings diretamente no contexto do usuário testefinal.
+    - curtin in-target -- su - testefinal -c "gsettings set org.gnome.desktop.background picture-uri file:///home/testefinal/Frame-6.png"
+    - curtin in-target -- su - testefinal -c "gsettings set org.gnome.desktop.background picture-uri-dark file:///home/testefinal/Frame-6.png"
 
   power-state:
     delay: 5
