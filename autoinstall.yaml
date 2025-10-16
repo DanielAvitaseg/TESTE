@@ -9,7 +9,7 @@ autoinstall:
     wipe: all
     layout:
       name: lvm
-      match: 
+      match:  
         path: /dev/nvme0n1
       password: "$6$62BXzCtLeYnZrhUs$1n39Rl1ZHCW7G9M7CKe2d93DVG/HOffMXjoZuo7e190jVr0IoVlchVNdGL2wX2ueQHKNSno5tJJ5i9rMTqDDs1"
 
@@ -17,10 +17,8 @@ autoinstall:
   # CONFIGURAÇÕES DE SISTEMA (Identidade e Localização)
   # ====================================================================
   identity:
-    # Usuário: danielavita (Conforme definido nos comandos)
     hostname: daniel_sammartano
     username: testefinal
-    # Senha criptografada
     password: "$6$62BXzCtLeYnZrhUs$1n39Rl1ZHCW7G9M7CKe2d93DVG/HOffMXjoZuo7e190jVr0IoVlchVNdGL2wX2ueQHKNSno5tJJ5i9rMTqDDs1" 
     
   locale: pt_BR
@@ -33,7 +31,7 @@ autoinstall:
   # INSTALAÇÃO DECLARATIVA DE APLICATIVOS (APT e SNAP)
   # ====================================================================
   packages:
-    # Pacotes APT essenciais (Docker, Git, utilitários)
+    # Incluindo libglib2.0-bin para garantir que o comando 'gsettings' exista
     - docker.io
     - apt-transport-https
     - ca-certificates
@@ -43,6 +41,7 @@ autoinstall:
     - gimp
     - git
     - wget
+    - libglib2.0-bin 
 
   snaps:
     # Aplicações instaladas via Snap Store
@@ -71,13 +70,34 @@ autoinstall:
   shutdown: reboot
 
   # ====================================================================
-  # COMANDOS DE PÓS-INSTALAÇÃO (Configurações de Usuário e Extensões)
+  # COMANDOS DE PÓS-INSTALAÇÃO (Configurações de Usuário, Extensões e Wallpaper)
   # ====================================================================
   late-commands:
-    # 1. Update/Upgrade inicial (após a instalação base e dos snaps)
+    # Variável de usuário para simplificar
+    - |
+      TARGET_USER="testefinal"
+      IMAGE_URL="https://i.ibb.co/cwtDVCS/Frame-6.png"
+      IMAGE_PATH="/home/${TARGET_USER}/Frame-6.png"
+      
+    # 1. Update/Upgrade inicial
     - curtin in-target -- apt update
     - curtin in-target -- apt upgrade -y
       
+    # 2. DOWNLOAD E PERMISSÃO DO PAPEL DE PAREDE
+    - |
+      # Baixa a imagem diretamente para o diretório do usuário
+      curtin in-target -- sh -c "wget -O \"${IMAGE_PATH}\" \"${IMAGE_URL}\""
+      # Garante que o usuário é o proprietário do arquivo
+      curtin in-target -- chown "${TARGET_USER}":"${TARGET_USER}" "${IMAGE_PATH}"
+      
+    # 3. DEFINIÇÃO DO PAPEL DE PAREDE USANDO GSETTINGS (GNOME)
+    # Roda o comando gsettings no contexto do usuário 'testefinal'.
+    - |
+      # Configura o wallpaper para o modo claro (padrão)
+      curtin in-target -- su - "${TARGET_USER}" -c "gsettings set org.gnome.desktop.background picture-uri file://${IMAGE_PATH}"
+      # Configura o wallpaper para o modo escuro
+      curtin in-target -- su - "${TARGET_USER}" -c "gsettings set org.gnome.desktop.background picture-uri-dark file://${IMAGE_PATH}"
+
   power-state:
     delay: 5
     mode: reboot
