@@ -11,17 +11,17 @@ autoinstall:
       name: lvm
       match: 
         path: /dev/nvme0n1
-      password: Senhafoda123@ 
+      password: "$6$62BXzCtLeYnZrhUs$1n39Rl1ZHCW7G9M7CKe2d93DVG/HOffMXjoZuo7e190jVr0IoVlchVNdGL2wX2ueQHKNSno5tJJ5i9rMTqDDs1"
 
   # ====================================================================
   # CONFIGURAÇÕES DE SISTEMA (Identidade e Localização)
   # ====================================================================
   identity:
     # Usuário: danielavita (Conforme definido nos comandos)
-    hostname: notebook-ubuntu
-    username: danielavita
+    hostname: daniel_sammartano
+    username: testefinal
     # Senha criptografada
-    password: "$6$EAyehhfqepzaGX78$k4Qceki0nxJKS2.ZxcWyWjn7db3p7/0Qu.S6pr32pIqVpzfFmwnOj/.XKgY6x3ADG077lE.DoNwMpXZ2aXr3q." 
+    password: "$6$62BXzCtLeYnZrhUs$1n39Rl1ZHCW7G9M7CKe2d93DVG/HOffMXjoZuo7e190jVr0IoVlchVNdGL2wX2ueQHKNSno5tJJ5i9rMTqDDs1" 
     
   locale: pt_BR
   timezone: America/Sao_Paulo
