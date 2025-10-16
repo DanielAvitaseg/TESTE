@@ -78,16 +78,6 @@ autoinstall:
     - curtin in-target -- apt update
     - curtin in-target -- apt upgrade -y
       
-    # 2. DOWNLOAD DA IMAGEM E GARANTIA DE PERMISSÃO (SIMPLIFICADO)
-    # Baixa a imagem diretamente para /home/testefinal/Frame-6.png e garante que o proprietário seja o usuário.
-    # O comando é executado no shell do root, mas atua no diretório do usuário.
-    - curtin in-target -- sh -c "wget -O /home/testefinal/Frame-6.png https://i.ibb.co/cwtDVCS/Frame-6.png && chown testefinal:testefinal /home/testefinal/Frame-6.png"
-      
-    # 3. DEFINIÇÃO DO PAPEL DE PAREDE (SIMPLIFICADO E ROBUSTO)
-    # Roda os comandos gsettings diretamente no contexto do usuário testefinal.
-    - curtin in-target -- su - testefinal -c "gsettings set org.gnome.desktop.background picture-uri file:///home/testefinal/Frame-6.png"
-    - curtin in-target -- su - testefinal -c "gsettings set org.gnome.desktop.background picture-uri-dark file:///home/testefinal/Frame-6.png"
-
   power-state:
     delay: 5
     mode: reboot
