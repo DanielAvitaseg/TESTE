@@ -19,7 +19,7 @@ autoinstall:
   identity:
     hostname: daniel_sammartano
     username: testefinal
-    password: "$6$62BXzCtLeYnZrhUs$1n39Rl1ZHCW7G9M7CKe2d93DVG/HOffMXjoZuo7e190jVr0IoVlchVNdGL2wX2ueQHKNSno5tJJ5i9rMTqDDs1" 
+    password: "$6$62BXzCtLeYnZrhUs$1n39Rl1ZHCW7G9M7CKe2d93DVG/HOffMXjoZuo7e190jVr0IoVlchVNdGL2wX2ueQHKNSno5tJJ5i9rMTqDDs1"  
     
   locale: pt_BR
   timezone: America/Sao_Paulo
@@ -67,18 +67,28 @@ autoinstall:
   drivers:
     install: true
   updates: all
-  shutdown: reboot
 
   # ====================================================================
-  # COMANDOS DE PÓS-INSTALAÇÃO (Configurações de Usuário, Extensões e Wallpaper)
-  # Este bloco foi corrigido para resolver o erro de execução.
+  # COMANDOS DE PÓS-INSTALAÇÃO (Executados como ROOT durante a instalação)
   # ====================================================================
-   late-commands:
-    # 1. Update/Upgrade inicial (Mantido)
+  late-commands:
+    # 1. Update/Upgrade inicial
     - curtin in-target -- apt update
     - curtin in-target -- apt upgrade -y
 
-   sudo apt install wget -y && wget -P ~/Downloads https://i.ibb.co/cwtDVCS/Frame-6.png && gsettings set org.gnome.desktop.background picture-uri "file://$HOME/Downloads/Frame-6.png" && gsettings set org.gnome.desktop.background picture-uri-dark "file://$HOME/Downloads/Frame-6.png"
+    # 2. Apenas baixa o wallpaper para uma pasta pública do sistema.
+    #    Não tentamos definir o gsettings aqui.
+    - curtin in-target -- wget -O /usr/share/backgrounds/custom-wallpaper.png https://i.ibb.co/cwtDVCS/Frame-6.png
+      
+  # ====================================================================
+  # CONFIGURAÇÃO DE USUÁRIO (Executado como 'testefinal' NO PRIMEIRO BOOT)
+  # Esta é a forma mais simples e garantida de definir o wallpaper.
+  # ====================================================================
+  user-data:
+    runcmd:
+      # O sistema rodará estes comandos como 'testefinal' no primeiro login
+      - gsettings set org.gnome.desktop.background picture-uri "file:///usr/share/backgrounds/custom-wallpaper.png"
+      - gsettings set org.gnome.desktop.background picture-uri-dark "file:///usr/share/backgrounds/custom-wallpaper.png"
       
   power-state:
     delay: 5
