@@ -11,7 +11,7 @@ autoinstall:
       name: lvm
       match:  
         path: /dev/nvme0n1
-      password: "$6$qpaWdIne0Hy0aUR8$0uNbzRQNmiTeNEObI0BRF6KXKuS7Wgxav0pjOkG89cN89jCSlfm87MyClBmpPrX8VxAXzNdT20m5WWJ4CEhAa."
+      password: "078edf56ac338b70ab9881055061eb00afabb2713d4954c129eece0c87449134be8a387d855c953a9d1558e2d42d4a905b4200d595d6f392fc6b2475291ca516"
 
   # ====================================================================
   # CONFIGURAÇÕES DE SISTEMA (Identidade e Localização)
@@ -19,7 +19,7 @@ autoinstall:
   identity:
     hostname: daniel_sammartano
     username: testefinal
-    password: "$6$qpaWdIne0Hy0aUR8$0uNbzRQNmiTeNEObI0BRF6KXKuS7Wgxav0pjOkG89cN89jCSlfm87MyClBmpPrX8VxAXzNdT20m5WWJ4CEhAa."  
+    password: "078edf56ac338b70ab9881055061eb00afabb2713d4954c129eece0c87449134be8a387d855c953a9d1558e2d42d4a905b4200d595d6f392fc6b2475291ca516"  
     
   locale: pt_BR
   timezone: America/Sao_Paulo
