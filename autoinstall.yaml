@@ -1,72 +1,72 @@
 #cloud-config
 autoinstall:
-  version: 1
-  
-  # ====================================================================
-  # CONFIGURAÇÃO DE ARMAZENAMENTO
-  # ====================================================================
-  storage:
-    wipe: all
-    layout:
-      name: lvm
-      match:  
-        path: /dev/nvme0n1
-      password: "$6$62BXzCtLeYnZrhUs$1n39Rl1ZHCW7G9M7CKe2d93DVG/HOffMXjoZuo7e190jVr0IoVlchVNdGL2wX2ueQHKNSno5tJJ5i9rMTqDDs1"
+  version: 1
+  
+  # ====================================================================
+  # CONFIGURAÇÃO DE ARMAZENAMENTO
+  # ====================================================================
+  storage:
+    wipe: all
+    layout:
+      name: lvm
+      match:  
+        path: /dev/nvme0n1
+      password: "$6$62BXzCtLeYnZrhUs$1n39Rl1ZHCW7G9M7CKe2d93DVG/HOffMXjoZuo7e190jVr0IoVlchVNdGL2wX2ueQHKNSno5tJJ5i9rMTqDDs1"
 
-  # ====================================================================
-  # CONFIGURAÇÕES DE SISTEMA (Identidade e Localização)
-  # ====================================================================
-  identity:
-    hostname: daniel_sammartano
-    username: testefinal
-    password: "$6$62BXzCtLeYnZrhUs$1n39Rl1ZHCW7G9M7CKe2d93DVG/HOffMXjoZuo7e190jVr0IoVlchVNdGL2wX2ueQHKNSno5tJJ5i9rMTqDDs1"  
-    
-  locale: pt_BR
-  timezone: America/Sao_Paulo
-  
-  keyboard:
-    layout: br
+  # ====================================================================
+  # CONFIGURAÇÕES DE SISTEMA (Identidade e Localização)
+  # ====================================================================
+  identity:
+    hostname: daniel_sammartano
+    username: testefinal
+    password: "$6$62BXzCtLeYnZrhUs$1n39Rl1ZHCW7G9M7CKe2d93DVG/HOffMXjoZuo7e190jVr0IoVlchVNdGL2wX2ueQHKNSno5tJJ5i9rMTqDDs1"  
+    
+  locale: pt_BR
+  timezone: America/Sao_Paulo
+  
+  keyboard:
+    layout: br
 
-  # ====================================================================
-  # INSTALAÇÃO DECLARATIVA DE APLICATIVOS (APT e SNAP)
-  # ====================================================================
-  packages:
-    # Pacotes APT essenciais (Docker, Git, utilitários, libglib2.0-bin para gsettings)
-    - docker.io
-    - apt-transport-https
-    - ca-certificates
-    - curl
-    - gnupg
-    - lsb-release
-    - gimp
-    - git
-    - wget
-    - libglib2.0-bin # Necessário para o comando 'gsettings'
+  # ====================================================================
+  # INSTALAÇÃO DECLARATIVA DE APLICATIVOS (APT e SNAP)
+  # ====================================================================
+  packages:
+    # Pacotes APT essenciais (Docker, Git, utilitários, libglib2.0-bin para gsettings)
+    - docker.io
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    - gnupg
+    - lsb-release
+    - gimp
+    - git
+    - wget
+    - libglib2.0-bin # Necessário para o comando 'gsettings'
 
-  snaps:
-    # Aplicações instaladas via Snap Store
-    - name: spotify
-      channel: stable
-      classic: false
-    - name: postman
-      channel: stable
-      classic: false
-    - name: slack
-      channel: stable
-      classic: false
-    - name: code # VS Code
-      channel: stable
-      classic: true
-    - name: dbeaver-ce
-      channel: stable
-      classic: false
-      
-  # Configurações adicionais
-  codecs:
-    install: true
-  drivers:
-    install: true
-  updates: all
+  snaps:
+    # Aplicações instaladas via Snap Store
+    - name: spotify
+      channel: stable
+      classic: false
+    - name: postman
+      channel: stable
+      classic: false
+    - name: slack
+      channel: stable
+      classic: false
+    - name: code # VS Code
+      channel: stable
+      classic: true
+    - name: dbeaver-ce
+      channel: stable
+      classic: false
+      
+  # Configurações adicionais
+  codecs:
+    install: true
+  drivers:
+    install: true
+  updates: all
 
   # ====================================================================
   # COMANDOS DE PÓS-INSTALAÇÃO (Executados como ROOT durante a instalação)
@@ -89,5 +89,3 @@ autoinstall:
   power-state:
   	delay: 5
   	mode: reboot
-
-# (NÃO DEVE TER MAIS NENHUM user-data ou power-state abaixo disso)
