@@ -1,91 +1,91 @@
 #cloud-config
 autoinstall:
-  version: 1
-  
-  # ====================================================================
-  # CONFIGURAÇÃO DE ARMAZENAMENTO
-  # ====================================================================
-  storage:
-    wipe: all
-    layout:
-      name: lvm
-      match:  
-        path: /dev/nvme0n1
-      password: "$6$62BXzCtLeYnZrhUs$1n39Rl1ZHCW7G9M7CKe2d93DVG/HOffMXjoZuo7e190jVr0IoVlchVNdGL2wX2ueQHKNSno5tJJ5i9rMTqDDs1"
+  version: 1
 
-  # ====================================================================
-  # CONFIGURAÇÕES DE SISTEMA (Identidade e Localização)
-  # ====================================================================
-  identity:
-    hostname: daniel_sammartano
-    username: testefinal
-    password: "$6$62BXzCtLeYnZrhUs$1n39Rl1ZHCW7G9M7CKe2d93DVG/HOffMXjoZuo7e190jVr0IoVlchVNdGL2wX2ueQHKNSno5tJJ5i9rMTqDDs1"  
-    
-  locale: pt_BR
-  timezone: America/Sao_Paulo
-  
-  keyboard:
-    layout: br
+  # ====================================================================
+  # CONFIGURAÇÃO DE ARMAZENAMENTO
+  # ====================================================================
+  storage:
+    wipe: all
+    layout:
+      name: lvm
+      match:  
+        path: /dev/nvme0n1
+      password: "$6$62BXzCtLeYnZrhUs$1n39Rl1ZHCW7G9M7CKe2d93DVG/HOffMXjoZuo7e190jVr0IoVlchVNdGL2wX2ueQHKNSno5tJJ5i9rMTqDDs1"
 
-  # ====================================================================
-  # INSTALAÇÃO DECLARATIVA DE APLICATIVOS (APT e SNAP)
-  # ====================================================================
-  packages:
-    # Pacotes APT essenciais (Docker, Git, utilitários, libglib2.0-bin para gsettings)
-    - docker.io
-    - apt-transport-https
-    - ca-certificates
-    - curl
-    - gnupg
-    - lsb-release
-    - gimp
-    - git
-    - wget
-    - libglib2.0-bin # Necessário para o comando 'gsettings'
+  # ====================================================================
+  # CONFIGURAÇÕES DE SISTEMA (Identidade e Localização)
+  # ====================================================================
+  identity:
+    hostname: daniel_sammartano
+    username: testefinal
+    password: "$6$62BXzCtLeYnZrhUs$1n39Rl1ZHCW7G9M7CKe2d93DVG/HOffMXjoZuo7e190jVr0IoVlchVNdGL2wX2ueQHKNSno5tJJ5i9rMTqDDs1"  
+    
+  locale: pt_BR
+  timezone: America/Sao_Paulo
+  
+  keyboard:
+    layout: br
 
-  snaps:
-    # Aplicações instaladas via Snap Store
-    - name: spotify
-      channel: stable
-      classic: false
-    - name: postman
-      channel: stable
-      classic: false
-    - name: slack
-      channel: stable
-      classic: false
-    - name: code # VS Code
-      channel: stable
-      classic: true
-    - name: dbeaver-ce
-      channel: stable
-      classic: false
-      
-  # Configurações adicionais
-  codecs:
-    install: true
-  drivers:
-    install: true
-  updates: all
+  # ====================================================================
+  # INSTALAÇÃO DECLARATIVA DE APLICATIVOS (APT e SNAP)
+  # ====================================================================
+  packages:
+    # Pacotes APT essenciais (Docker, Git, utilitários, libglib2.0-bin para gsettings)
+    - docker.io
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    - gnupg
+    - lsb-release
+    - gimp
+    - git
+    - wget
+    - libglib2.0-bin # Necessário para o comando 'gsettings'
 
-  # ====================================================================
-  # COMANDOS DE PÓS-INSTALAÇÃO (Executados como ROOT durante a instalação)
-  # ====================================================================
-  late-commands:
-  	# 1. Update/Upgrade inicial
-  	- curtin in-target -- apt update
-  	- curtin in-target -- apt upgrade -y
-  	# 2. O comando wget foi REMOVIDO DAQUI, pois será executado pelo usuário.
-      
-  # ====================================================================
-  # CONFIGURAÇÃO DE USUÁRIO (Executado como 'testefinal' NO PRIMEIRO BOOT)
-  # ====================================================================
-  user-data:
-  	runcmd:
-  		# Esta linha única baixa o wallpaper para a pasta Downloads
-  		# do usuário E JÁ DEFINE ele como fundo de tela.
-  		- 'wget -P ~/Downloads https://i.ibb.co/cwtDVCS/Frame-6.png; gsettings set org.gnome.desktop.background picture-uri "file://$HOME/Downloads/Frame-6.png"; gsettings set org.gnome.desktop.background picture-uri-dark "file://$HOME/Downloads/Frame-6.png"'
-      
-  power-state:
-  	delay: 5
-  	mode: reboot
+  snaps:
+    # Aplicações instaladas via Snap Store
+    - name: spotify
+      channel: stable
+      classic: false
+    - name: postman
+      channel: stable
+      classic: false
+    - name: slack
+      channel: stable
+      classic: false
+    - name: code # VS Code
+      channel: stable
+      classic: true
+    - name: dbeaver-ce
+      channel: stable
+      classic: false
+      
+  # Configurações adicionais
+  codecs:
+    install: true
+  drivers:
+    install: true
+  updates: all
+
+  # ====================================================================
+  # COMANDOS DE PÓS-INSTALAÇÃO (Executados como ROOT durante a instalação)
+  # ====================================================================
+  late-commands:
+    # 1. Update/Upgrade inicial
+    - curtin in-target -- apt update
+    - curtin in-target -- apt upgrade -y
+    # 2. O comando wget foi REMOVIDO DAQUI, pois será executado pelo usuário.
+      
+  # ====================================================================
+  # CONFIGURAÇÃO DE USUÁRIO (Executado como 'testefinal' NO PRIMEIRO BOOT)
+  # ====================================================================
+  user-data:
+    runcmd:
+      # Esta linha única baixa o wallpaper para a pasta Downloads
+      # do usuário E JÁ DEFINE ele como fundo de tela.
+      - 'wget -P ~/Downloads https://i.ibb.co/cwtDVCS/Frame-6.png; gsettings set org.gnome.desktop.background picture-uri "file://$HOME/Downloads/Frame-6.png"; gsettings set org.gnome.desktop.background picture-uri-dark "file://$HOME/Downloads/Frame-6.png"'
+      
+  power-state:
+    delay: 5
+    mode: reboot
