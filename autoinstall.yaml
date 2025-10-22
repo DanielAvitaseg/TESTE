@@ -13,7 +13,7 @@ autoinstall:
         path: /dev/nvme0n1
       
       # SENHA DE CRIPTOGRAFIA (LUKS)
-      password: "Avita"
+      password: "Avita123"
 
   # ====================================================================
   # CONFIGURAÇÕES DE SISTEMA (Identidade e Localização)
@@ -22,7 +22,7 @@ autoinstall:
     hostname: daniel_sammartano
     username: testefinal
     # SENHA DO USUÁRIO ALTERADA PARA Senhafoda123@ (string simples)
-    password: "Avita"
+    password: "Avita123"
     
   locale: pt_BR
   timezone: America/Sao_Paulo
