@@ -11,7 +11,9 @@ autoinstall:
       name: lvm
       match:  
         path: /dev/nvme0n1
-      password: "078edf56ac338b70ab9881055061eb00afabb2713d4954c129eece0c87449134be8a387d855c953a9d1558e2d42d4a905b4200d595d6f392fc6b2475291ca516"
+      
+      # SENHA DE CRIPTOGRAFIA (LUKS)
+      password: "Senhafoda123@"
 
   # ====================================================================
   # CONFIGURAÇÕES DE SISTEMA (Identidade e Localização)
@@ -19,7 +21,8 @@ autoinstall:
   identity:
     hostname: daniel_sammartano
     username: testefinal
-    password: "078edf56ac338b70ab9881055061eb00afabb2713d4954c129eece0c87449134be8a387d855c953a9d1558e2d42d4a905b4200d595d6f392fc6b2475291ca516"  
+    # SENHA DO USUÁRIO ALTERADA PARA Senhafoda123@ (string simples)
+    password: "Senhafoda123@"
     
   locale: pt_BR
   timezone: America/Sao_Paulo
@@ -33,33 +36,31 @@ autoinstall:
   packages:
     # Pacotes APT essenciais (Docker, Git, utilitários, libglib2.0-bin para gsettings)
     - docker.io
+    - git
+    - gimp
+    # Pacotes de utilitários que podem ser necessários para o resto
     - apt-transport-https
     - ca-certificates
     - curl
     - gnupg
     - lsb-release
-    - gimp
-    - git
     - wget
     - libglib2.0-bin # Necessário para o comando 'gsettings'
+    - docker-compose-plugin # Instala a nova versão do docker compose
 
   snaps:
     # Aplicações instaladas via Snap Store
     - name: spotify
       channel: stable
-      classic: false
     - name: postman
       channel: stable
-      classic: false
     - name: slack
       channel: stable
-      classic: false
     - name: code # VS Code
       channel: stable
       classic: true
     - name: dbeaver-ce
       channel: stable
-      classic: false
       
   # Configurações adicionais
   codecs:
@@ -75,16 +76,35 @@ autoinstall:
     # 1. Update/Upgrade inicial
     - curtin in-target -- apt update
     - curtin in-target -- apt upgrade -y
-    # 2. O comando wget foi REMOVIDO DAQUI, pois será executado pelo usuário.
+    
+    # 2. Adiciona o usuário 'testefinal' ao grupo 'docker'
+    - curtin in-target -- usermod -aG docker testefinal
+    - curtin in-target -- echo "✅ Usuário 'testefinal' adicionado ao grupo 'docker'."
       
   # ====================================================================
-  # CONFIGURAÇÃO DE USUÁRIO (Executado como 'testefinal' NO PRIMEIRO BOOT)
+  # CONFIGURAÇÃO DE USUÁRIO (Executado no PRIMEIRO BOOT)
   # ====================================================================
   user-data:
     runcmd:
-      # Esta linha única baixa o wallpaper para a pasta Downloads
-      # do usuário E JÁ DEFINE ele como fundo de tela.
-      - 'wget -P ~/Downloads https://i.ibb.co/cwtDVCS/Frame-6.png; gsettings set org.gnome.desktop.background picture-uri "file://$HOME/Downloads/Frame-6.png"; gsettings set org.gnome.desktop.background picture-uri-dark "file://$HOME/Downloads/Frame-6.png"'
+      # Os comandos são executados como ROOT, então usamos 'su -' para mudar para o usuário 'testefinal'.
+      - su - testefinal -c '
+        echo "🛠️ Iniciando configuração de ambiente do usuário (testefinal)..."
+        
+        # Define a variável HOME no shell do usuário
+        export HOME=/home/testefinal
+        
+        # 1. Baixa o wallpaper para a pasta Downloads
+        echo "⬇️ Baixando wallpaper..."
+        wget https://i.ibb.co/cwtDVCS/Frame-6.png -O $HOME/Downloads/Frame-6.png
+        
+        # 2. Define o wallpaper usando gsettings (executado no contexto do usuário)
+        echo "🖼️ Aplicando wallpaper..."
+        gsettings set org.gnome.desktop.background picture-uri "file://$HOME/Downloads/Frame-6.png"
+        gsettings set org.gnome.desktop.background picture-uri-dark "file://$HOME/Downloads/Frame-6.png"
+        echo "✅ Wallpaper aplicado."
+
+        echo "🎉 Configuração de usuário concluída."
+      '
       
   power-state:
     delay: 5
