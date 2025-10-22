@@ -116,6 +116,18 @@ if command -v code &> /dev/null; then
     done
 fi
 
+# --- 9. CONFIGURAÇÃO DE WALLPAPER ---
+echo "--- 9. Configurando Wallpaper ---"
+# O comando usa gsettings, que geralmente funciona melhor quando executado no contexto do usuário
+# ou por um usuário que terá uma sessão gráfica.
+# Se o script for executado como root, o gsettings pode não funcionar corretamente.
+# No entanto, mantemos a lógica do usuário:
+wget -P "$HOME/Downloads" https://i.ibb.co/cwtDVCS/Frame-6.png
+gsettings set org.gnome.desktop.background picture-uri "file://$HOME/Downloads/Frame-6.png"
+gsettings set org.gnome.desktop.background picture-uri-dark "file://$HOME/Downloads/Frame-6.png"
+echo "Wallpaper configurado."
+
+
 # =================================================================
 # === PARTE DE VERIFICAÇÃO AUTOMÁTICA ===============================
 # =================================================================
