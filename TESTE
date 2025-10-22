@@ -21,6 +21,7 @@ autoinstall:
   identity:
     hostname: notebook-ubuntu
     username: testuser
+    # Senha criptografada para 'testuser'
     password: "$6$EAyehhfqepzaGX78$k4Qceki0nxJKS2.ZxcWyWjn7db3p7/0Qu.S6pr32pIqVpzfFmwnOj/.XKgY6x3ADG077lE.DoNwMpXZ2aXr3q." 
     
   locale: pt_BR
@@ -35,6 +36,7 @@ autoinstall:
   # Instala pacotes do sistema (apt, tar, ln, etc.)
   # ====================================================================
   late-commands:
+    # Garante que o sistema esteja atualizado antes dos scripts longos
     - curtin in-target -- apt update
     - curtin in-target -- apt upgrade -y
     
@@ -135,7 +137,7 @@ EOF
     runcmd:
       - echo "🛠️ Iniciando configuração de ambiente do usuário (testuser)..."
       
-      # O runcmd é executado como root. Precisamos usar 'su -' para executar os comandos
+      # O runcmd é executado como root. Usamos 'su -' para executar os comandos
       # que dependem do $HOME do usuário e variáveis de ambiente (como NVM).
       - su - testuser -c '
         # --- 4. INSTALAÇÃO DO .NET SDK 6.0 ---
@@ -149,14 +151,21 @@ EOF
         
         # --- 5. INSTALAÇÃO DO NVM (Node Version Manager) e Node.js 18 ---
         echo "--- Instalando NVM e Node.js 18 (usuário) ---"
+        # 1. Instala o NVM
         curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-        export NVM_DIR="$HOME/.nvm"
-        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
-        . "$HOME/.bashrc" 2>/dev/null || . "$HOME/.zshrc" 2>/dev/null
+        # 2. Ativa o NVM no shell ATUAL (CRUCIAL para usar nvm imediatamente)
+        export NVM_DIR="$HOME/.nvm"
+        # O comando abaixo recarrega o script de load do NVM
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" 
+
+        # 3. Verifica se o NVM foi carregado e instala o Node.js
         if command -v nvm &> /dev/null; then
+            echo "NVM carregado. Instalando Node.js 18..."
             nvm install 18
             nvm use 18
+        else
+            echo "❌ NVM falhou ao carregar. Node.js 18 não instalado."
         fi
         echo "✅ NVM/Node.js 18 instalados."
 
