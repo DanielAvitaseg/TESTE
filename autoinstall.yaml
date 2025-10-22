@@ -12,7 +12,7 @@ autoinstall:
       match:  
         path: /dev/nvme0n1
       
-      # SENHA DE CRIPTOGRAFIA (LUKS) - Usando aspas simples para permitir o caractere "
+      # SENHA DE CRIPTOGRAFIA (LUKS)
       password: 'Avita123"'
 
   # ====================================================================
@@ -21,7 +21,6 @@ autoinstall:
   identity:
     hostname: daniel_sammartano
     username: testefinal
-    # SENHA DO USUÁRIO - Usando aspas simples para permitir o caractere "
     password: 'Avita123"'
     
   locale: pt_BR
@@ -34,29 +33,26 @@ autoinstall:
   # INSTALAÇÃO DECLARATIVA DE APLICATIVOS (APT e SNAP)
   # ====================================================================
   packages:
-    # Pacotes APT essenciais (Docker, Git, utilitários, libglib2.0-bin para gsettings)
     - docker.io
     - git
     - gimp
-    # Pacotes de utilitários que podem ser necessários para o resto
     - apt-transport-https
     - ca-certificates
     - curl
     - gnupg
     - lsb-release
     - wget
-    - libglib2.0-bin # Necessário para o comando 'gsettings'
-    - docker-compose-plugin # Instala a nova versão do docker compose
+    - libglib2.0-bin
+    - docker-compose-plugin
 
   snaps:
-    # Aplicações instaladas via Snap Store
     - name: spotify
       channel: stable
     - name: postman
       channel: stable
     - name: slack
       channel: stable
-    - name: code # VS Code
+    - name: code
       channel: stable
       classic: true
     - name: dbeaver-ce
@@ -70,42 +66,24 @@ autoinstall:
   updates: all
 
   # ====================================================================
-  # COMANDOS DE PÓS-INSTALAÇÃO (Executados como ROOT durante a instalação)
+  # COMANDOS DE PÓS-INSTALAÇÃO (ROOT)
   # ====================================================================
   late-commands:
-    # 1. Update/Upgrade inicial
     - curtin in-target -- apt update
     - curtin in-target -- apt upgrade -y
-    
-    # 2. Adiciona o usuário 'testefinal' ao grupo 'docker'
     - curtin in-target -- usermod -aG docker testefinal
-    - curtin in-target -- echo "✅ Usuário 'testefinal' adicionado ao grupo 'docker'."
       
   # ====================================================================
-  # CONFIGURAÇÃO DE USUÁRIO (Executado no PRIMEIRO BOOT)
+  # CONFIGURAÇÃO DE USUÁRIO (PRIMEIRO BOOT)
   # ====================================================================
   user-data:
     runcmd:
-      # Os comandos são executados como ROOT, então usamos 'su -' para mudar para o usuário 'testefinal'.
-      - su - testefinal -c '
-        echo "🛠️ Iniciando configuração de ambiente do usuário (testefinal)..."
-        
-        # Define a variável HOME no shell do usuário
-        export HOME=/home/testefinal
-        
-        # 1. Baixa o wallpaper para a pasta Downloads
-        echo "⬇️ Baixando wallpaper..."
-        wget https://i.ibb.co/cwtDVCS/Frame-6.png -O $HOME/Downloads/Frame-6.png
-        
-        # 2. Define o wallpaper usando gsettings (executado no contexto do usuário)
-        echo "🖼️ Aplicando wallpaper..."
-        gsettings set org.gnome.desktop.background picture-uri "file://$HOME/Downloads/Frame-6.png"
-        gsettings set org.gnome.desktop.background picture-uri-dark "file://$HOME/Downloads/Frame-6.png"
-        echo "✅ Wallpaper aplicado."
-
-        echo "🎉 Configuração de usuário concluída."
-      '
+      # Comando executado como testefinal em uma ÚNICA LINHA para evitar erros de indentação.
+      - su - testefinal -c 'export HOME=/home/testefinal; wget https://i.ibb.co/cwtDVCS/Frame-6.png -O $HOME/Downloads/Frame-6.png; gsettings set org.gnome.desktop.background picture-uri "file://$HOME/Downloads/Frame-6.png"; gsettings set org.gnome.desktop.background picture-uri-dark "file://$HOME/Downloads/Frame-6.png"'
       
+  # ====================================================================
+  # AÇÃO FINAL
+  # ====================================================================
   power-state:
     delay: 5
     mode: reboot
