@@ -31,6 +31,7 @@ autoinstall:
 
   # ====================================================================
   # INSTALAÇÃO DECLARATIVA DE APLICATIVOS (APT e SNAP)
+  # Removido 'docker-compose-plugin' para evitar a falha de instalação.
   # ====================================================================
   packages:
     - docker.io
@@ -42,8 +43,7 @@ autoinstall:
     - gnupg
     - lsb-release
     - wget
-    - libglib2.0-bin
-    - docker-compose-plugin
+    - libglib2.0-bin 
 
   snaps:
     - name: spotify
@@ -69,12 +69,15 @@ autoinstall:
   # COMANDOS DE PÓS-INSTALAÇÃO (ROOT)
   # ====================================================================
   late-commands:
+    # Atualiza repositórios
     - curtin in-target -- apt update
+    # Atualiza pacotes instalados
     - curtin in-target -- apt upgrade -y
+    # Adiciona o usuário ao grupo docker
     - curtin in-target -- usermod -aG docker testefinal
       
   # ====================================================================
-  # AÇÃO FINAL
+  # AÇÃO FINAL (Colocado na sub-chave correta para evitar o aviso/erro)
   # ====================================================================
   power-state:
     delay: 5
