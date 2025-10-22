@@ -12,8 +12,8 @@ autoinstall:
       match:  
         path: /dev/nvme0n1
       
-      # SENHA DE CRIPTOGRAFIA (LUKS)
-      password: "Avita123\"
+      # SENHA DE CRIPTOGRAFIA (LUKS) - Usando aspas simples para permitir o caractere "
+      password: 'Avita123"'
 
   # ====================================================================
   # CONFIGURAÇÕES DE SISTEMA (Identidade e Localização)
@@ -21,8 +21,8 @@ autoinstall:
   identity:
     hostname: daniel_sammartano
     username: testefinal
-    # SENHA DO USUÁRIO ALTERADA PARA Senhafoda123@ (string simples)
-    password: "Avita123\"
+    # SENHA DO USUÁRIO - Usando aspas simples para permitir o caractere "
+    password: 'Avita123"'
     
   locale: pt_BR
   timezone: America/Sao_Paulo
