@@ -74,14 +74,6 @@ autoinstall:
     - curtin in-target -- usermod -aG docker testefinal
       
   # ====================================================================
-  # CONFIGURAÇÃO DE USUÁRIO (PRIMEIRO BOOT)
-  # ====================================================================
-  user-data:
-    runcmd:
-      # Comando executado como testefinal em uma ÚNICA LINHA para evitar erros de indentação.
-      - su - testefinal -c 'export HOME=/home/testefinal; wget https://i.ibb.co/cwtDVCS/Frame-6.png -O $HOME/Downloads/Frame-6.png; gsettings set org.gnome.desktop.background picture-uri "file://$HOME/Downloads/Frame-6.png"; gsettings set org.gnome.desktop.background picture-uri-dark "file://$HOME/Downloads/Frame-6.png"'
-      
-  # ====================================================================
   # AÇÃO FINAL
   # ====================================================================
   power-state:
