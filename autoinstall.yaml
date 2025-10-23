@@ -1,57 +1,66 @@
 #cloud-config
 autoinstall:
   version: 1
-
-  # CONFIGURAÇÃO DE ARMAZENAMENTO (Criptografia e LVM)
+  
+  # ====================================================================
+  # CONFIGURAÇÃO DE ARMAZENAMENTO
+  # ====================================================================
   storage:
     wipe: all
     layout:
       name: lvm
-      match:
+      match: 
         path: /dev/nvme0n1
-      password: 'Senha2024'
-  
-  # CONFIGURAÇÕES DE SISTEMA BÁSICAS
+      password: "$6$62BXzCtLeYnZrhUs$1n39Rl1ZHCW7G9M7CKe2d93DVG/HOffMXjoZuo7e190jVr0IoVlchVNdGL2wX2ueQHKNSno5tJJ5i9rMTqDDs1"
+
+  # ====================================================================
+  # CONFIGURAÇÕES DE SISTEMA (Identidade e Localização)
+  # ====================================================================
   identity:
-    # hostname: Nome visível na rede, sem caracteres especiais é mais seguro
-    hostname: daniel-pc
-    # username: O nome de usuário a ser criado.
-    username: daniel.sammartano
-    password: 'Senha2024'
+    # Usuário: danielavita (Conforme definido nos comandos)
+    hostname: daniel_sammartano
+    username: testefinal
+    # Senha criptografada
+    password: "$6$62BXzCtLeYnZrhUs$1n39Rl1ZHCW7G9M7CKe2d93DVG/HOffMXjoZuo7e190jVr0IoVlchVNdGL2wX2ueQHKNSno5tJJ5i9rMTqDDs1" 
     
   locale: pt_BR
   timezone: America/Sao_Paulo
+  
   keyboard:
     layout: br
 
-  # INSTALAÇÃO DE APLICATIVOS (APT e SNAP)
+  # ====================================================================
+  # INSTALAÇÃO DECLARATIVA DE APLICATIVOS (APT e SNAP)
+  # ====================================================================
   packages:
+    # Pacotes APT essenciais (Docker, Git, utilitários)
     - docker.io
-    - git
-    - gimp
     - apt-transport-https
     - ca-certificates
     - curl
     - gnupg
     - lsb-release
+    - gimp
+    - git
     - wget
-    - libglib2.0-bin
-    - hunspell-pt-br
-    - wportuguese
-    - wpasupplicant
-    
+
   snaps:
+    # Aplicações instaladas via Snap Store
     - name: spotify
       channel: stable
+      classic: false
     - name: postman
       channel: stable
+      classic: false
     - name: slack
       channel: stable
-    - name: code
+      classic: false
+    - name: code # VS Code
       channel: stable
       classic: true
     - name: dbeaver-ce
       channel: stable
+      classic: false
       
   # Configurações adicionais
   codecs:
@@ -59,8 +68,16 @@ autoinstall:
   drivers:
     install: true
   updates: all
+  shutdown: reboot
 
-  # COMANDOS DE PÓS-INSTALAÇÃO (MÍNIMOS)
+  # ====================================================================
+  # COMANDOS DE PÓS-INSTALAÇÃO (Configurações de Usuário e Extensões)
+  # ====================================================================
   late-commands:
-    # AÇÃO FINAL: Reinicia o sistema
-    - curtin in-target -- /sbin/reboot 5
+    # 1. Update/Upgrade inicial (após a instalação base e dos snaps)
+    - curtin in-target -- apt update
+    - curtin in-target -- apt upgrade -y
+      
+  power-state:
+    delay: 5
+    mode: reboot
