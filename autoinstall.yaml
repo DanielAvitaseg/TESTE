@@ -10,7 +10,7 @@ autoinstall:
   identity:
     hostname: daniel_sammartano
     username: testefinal
-    password: "Senha2025"
+    password: "$6$MdC25qn4kdVq1aLD$Kj5kI0S9MT.X/hts4trI5yieA1hN9r7yoZ7nPdc4G5iyvP0y.0I0jLhj150oiOH70c/HPc9neaQA4ZRd0iFDW1"
   locale: pt_BR
   timezone: America/Sao_Paulo
   keyboard:
