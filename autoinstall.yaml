@@ -14,7 +14,7 @@ autoinstall:
   # CONFIGURAÇÕES DE SISTEMA
   identity:
     hostname: daniel_sammartano
-    username: Daniel.Sammartano # NOME FORNECIDO
+    username: Daniel.Sammartano
     password: 'Senha2024'
     
   locale: pt_BR
@@ -34,6 +34,9 @@ autoinstall:
     - lsb-release
     - wget
     - libglib2.0-bin 
+    - hunspell-pt-br # Adicionado para completar a localização PT-BR
+    - wportuguese    # Adicionado para completar a localização PT-BR
+    - wpasupplicant  # Adicionado para completar a instalação de drivers
 
   snaps:
     - name: spotify
@@ -57,14 +60,13 @@ autoinstall:
 
   # COMANDOS DE PÓS-INSTALAÇÃO (ROOT)
   late-commands:
-    # Atualiza repositórios
+    # 1. Atualiza repositórios
     - curtin in-target -- apt update
-    # Atualiza pacotes instalados
+    # 2. Atualiza pacotes instalados
     - curtin in-target -- apt upgrade -y
-    # CORREÇÃO: Usando o nome de usuário em minúsculas (daniel.sammartano)
-    - curtin in-target -- usermod -aG docker daniel.sammartano 
-      
-  # AÇÃO FINAL
-  power-state:
-    delay: 5
-    mode: reboot
+    # 3. CORREÇÃO: Adiciona o usuário ao grupo docker usando a formatação provável:
+    # (minúsculas e ponto substituído por underscore)
+    - curtin in-target -- usermod -aG docker daniel_sammartano
+    
+    # 4. AÇÃO FINAL: Reinicia o sistema (Movido para dentro dos comandos)
+    - curtin in-target -- /sbin/reboot 5
