@@ -13,3 +13,6 @@ sudo dpkg -i "$DBEAVER_DEB_FILE" && \
 sudo apt install -f -y && \
 rm "$DBEAVER_DEB_FILE" && \
 echo "✅ DBeaver CE instalado com sucesso."
+
+Reomver Programas repetidos:
+curl -s "https://raw.githubusercontent.com/DanielAvitaseg/TESTE/main/programas_repetidos.sh" | bash
