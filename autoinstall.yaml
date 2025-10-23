@@ -1,39 +1,21 @@
-#cloud-config
 autoinstall:
   version: 1
-  
-  # ====================================================================
-  # CONFIGURAÇÃO DE ARMAZENAMENTO
-  # ====================================================================
   storage:
     wipe: all
     layout:
       name: lvm
-      match: 
+      match:
         path: /dev/nvme0n1
-      password: "$6$62BXzCtLeYnZrhUs$1n39Rl1ZHCW7G9M7CKe2d93DVG/HOffMXjoZuo7e190jVr0IoVlchVNdGL2wX2ueQHKNSno5tJJ5i9rMTqDDs1"
-
-  # ====================================================================
-  # CONFIGURAÇÕES DE SISTEMA (Identidade e Localização)
-  # ====================================================================
+      password: "$6$v7kYp9WbTf4hGzR1$0GzUv8Fw3Oq5N7lX1pS9kH6jE2iC4bM0A8tY7eW3D1aR5sQ9v6xZ3yJ0I4uT8E"
   identity:
-    # Usuário: danielavita (Conforme definido nos comandos)
     hostname: daniel_sammartano
     username: testefinal
-    # Senha criptografada
-    password: "$6$62BXzCtLeYnZrhUs$1n39Rl1ZHCW7G9M7CKe2d93DVG/HOffMXjoZuo7e190jVr0IoVlchVNdGL2wX2ueQHKNSno5tJJ5i9rMTqDDs1" 
-    
+    password: "$6$v7kYp9WbTf4hGzR1$0GzUv8Fw3Oq5N7lX1pS9kH6jE2iC4bM0A8tY7eW3D1aR5sQ9v6xZ3yJ0I4uT8E"
   locale: pt_BR
   timezone: America/Sao_Paulo
-  
   keyboard:
     layout: br
-
-  # ====================================================================
-  # INSTALAÇÃO DECLARATIVA DE APLICATIVOS (APT e SNAP)
-  # ====================================================================
   packages:
-    # Pacotes APT essenciais (Docker, Git, utilitários)
     - docker.io
     - apt-transport-https
     - ca-certificates
@@ -43,9 +25,7 @@ autoinstall:
     - gimp
     - git
     - wget
-
   snaps:
-    # Aplicações instaladas via Snap Store
     - name: spotify
       channel: stable
       classic: false
@@ -55,29 +35,20 @@ autoinstall:
     - name: slack
       channel: stable
       classic: false
-    - name: code # VS Code
+    - name: code
       channel: stable
       classic: true
     - name: dbeaver-ce
       channel: stable
       classic: false
-      
-  # Configurações adicionais
   codecs:
     install: true
   drivers:
     install: true
   updates: all
-  shutdown: reboot
-
-  # ====================================================================
-  # COMANDOS DE PÓS-INSTALAÇÃO (Configurações de Usuário e Extensões)
-  # ====================================================================
   late-commands:
-    # 1. Update/Upgrade inicial (após a instalação base e dos snaps)
     - curtin in-target -- apt update
     - curtin in-target -- apt upgrade -y
-      
   power-state:
     delay: 5
     mode: reboot
