@@ -5,7 +5,7 @@ autoinstall:
     layout:
       name: lvm
       match:
-        path: /dev/nvme0n1
+        size: 470gb..
       password: "$6$v7kYp9WbTf4hGzR1$0GzUv8Fw3Oq5N7lX1pS9kH6jE2iC4bM0A8tY7eW3D1aR5sQ9v6xZ3yJ0I4uT8E"
   identity:
     hostname: daniel_sammartano
