@@ -9,14 +9,12 @@ autoinstall:
       name: lvm
       match:
         path: /dev/nvme0n1
-      # SENHA DE CRIPTOGRAFIA ALTERADA AQUI
       password: 'Senha2024'
   
   # CONFIGURAÇÕES DE SISTEMA
   identity:
     hostname: daniel_sammartano
-    username: Daniel.Sammartano
-    # SENHA DO USUÁRIO ALTERADA AQUI
+    username: Daniel.Sammartano # NOME FORNECIDO
     password: 'Senha2024'
     
   locale: pt_BR
@@ -59,11 +57,12 @@ autoinstall:
 
   # COMANDOS DE PÓS-INSTALAÇÃO (ROOT)
   late-commands:
-    # Atualiza pacotes e repositórios
+    # Atualiza repositórios
     - curtin in-target -- apt update
+    # Atualiza pacotes instalados
     - curtin in-target -- apt upgrade -y
-    # Adiciona o usuário ao grupo docker
-    - curtin in-target -- usermod -aG docker Daniel.Sammartano
+    # CORREÇÃO: Usando o nome de usuário em minúsculas (daniel.sammartano)
+    - curtin in-target -- usermod -aG docker daniel.sammartano 
       
   # AÇÃO FINAL
   power-state:
