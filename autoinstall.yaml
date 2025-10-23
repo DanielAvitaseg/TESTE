@@ -6,11 +6,11 @@ autoinstall:
       name: lvm
       match:
         path: /dev/nvme0n1
-      password: "Senha2025"
+      password: "Avita123"
   identity:
     hostname: daniel_sammartano
     username: daniel_sammartano # USUÁRIO CORRIGIDO AQUI
-    password: "$6$MdC25qn4kdVq1aLD$Kj5kI0S9MT.X/hts4trI5yieA1hN9r7yoZ7nPdc4G5iyvP0y.0I0jLhj150oiOH70c/HPc9neaQA4ZRd0iFDW1"
+    password: "$6$Xc9ZK8EFQGdlONL9$IIQGMT/V0XpJZnRTMkcb34TawqgkyGinHgcHcnq0oGY.ReZgITF1uXxBSxyllNRRkTuq0fx4QAoIWqC/Un3iW/"
   locale: pt_BR
   timezone: America/Sao_Paulo
   keyboard:
@@ -54,8 +54,6 @@ autoinstall:
     # 1. Atualização inicial (após a instalação base e dos snaps)
     - curtin in-target -- apt update
     - curtin in-target -- apt upgrade -y
-
-
     
   power-state:
     delay: 5
