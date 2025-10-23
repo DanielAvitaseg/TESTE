@@ -9,7 +9,7 @@ autoinstall:
       password: "Senha2025"
   identity:
     hostname: daniel_sammartano
-    username: daniel_sammartano
+    username: daniel_sammartano # USUÁRIO CORRIGIDO AQUI
     password: "$6$MdC25qn4kdVq1aLD$Kj5kI0S9MT.X/hts4trI5yieA1hN9r7yoZ7nPdc4G5iyvP0y.0I0jLhj150oiOH70c/HPc9neaQA4ZRd0iFDW1"
   locale: pt_BR
   timezone: America/Sao_Paulo
@@ -41,14 +41,27 @@ autoinstall:
     - name: dbeaver-ce
       channel: stable
       classic: false
+    # Adicionando .NET Core SDK 8.0 via Snap para simplificar
+    - name: dotnet-sdk
+      channel: 8.0/stable
+      classic: true
   codecs:
     install: true
   drivers:
     install: true
   updates: all
   late-commands:
+    # 1. Atualização inicial (após a instalação base e dos snaps)
     - curtin in-target -- apt update
     - curtin in-target -- apt upgrade -y
+
+    # 2. Instalação do NVM (Node Version Manager)
+    # Executado como o novo usuário: daniel_sammartano
+    - curtin in-target -- su - daniel_sammartano -c 'curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash'
+
+    # 3. Configuração do Docker (adicionar o novo usuário ao grupo docker)
+    - curtin in-target -- usermod -aG docker daniel_sammartano
+    
   power-state:
     delay: 5
     mode: reboot
