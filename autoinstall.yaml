@@ -2,37 +2,29 @@
 autoinstall:
   version: 1
 
-  # ====================================================================
-  # CONFIGURAÇÃO DE ARMAZENAMENTO
-  # ====================================================================
+  # CONFIGURAÇÃO DE ARMAZENAMENTO (Criptografia e LVM)
   storage:
     wipe: all
     layout:
       name: lvm
-      match:  
+      match:
         path: /dev/nvme0n1
-      
-      # SENHA DE CRIPTOGRAFIA (LUKS)
-      password: 'Avita123"'
-
-  # ====================================================================
-  # CONFIGURAÇÕES DE SISTEMA (Identidade e Localização)
-  # ====================================================================
+      # SENHA DE CRIPTOGRAFIA ALTERADA AQUI
+      password: 'Senha2024'
+  
+  # CONFIGURAÇÕES DE SISTEMA
   identity:
     hostname: daniel_sammartano
-    username: testefinal
-    password: 'Avita123"'
+    username: Daniel.Sammartano
+    # SENHA DO USUÁRIO ALTERADA AQUI
+    password: 'Senha2024'
     
   locale: pt_BR
   timezone: America/Sao_Paulo
-  
   keyboard:
     layout: br
 
-  # ====================================================================
-  # INSTALAÇÃO DECLARATIVA DE APLICATIVOS (APT e SNAP)
-  # Removido 'docker-compose-plugin' para evitar a falha de instalação.
-  # ====================================================================
+  # INSTALAÇÃO DE APLICATIVOS (APT e SNAP)
   packages:
     - docker.io
     - git
@@ -65,20 +57,15 @@ autoinstall:
     install: true
   updates: all
 
-  # ====================================================================
   # COMANDOS DE PÓS-INSTALAÇÃO (ROOT)
-  # ====================================================================
   late-commands:
-    # Atualiza repositórios
+    # Atualiza pacotes e repositórios
     - curtin in-target -- apt update
-    # Atualiza pacotes instalados
     - curtin in-target -- apt upgrade -y
     # Adiciona o usuário ao grupo docker
-    - curtin in-target -- usermod -aG docker testefinal
+    - curtin in-target -- usermod -aG docker Daniel.Sammartano
       
-  # ====================================================================
-  # AÇÃO FINAL (Colocado na sub-chave correta para evitar o aviso/erro)
-  # ====================================================================
+  # AÇÃO FINAL
   power-state:
     delay: 5
     mode: reboot
