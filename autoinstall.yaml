@@ -11,10 +11,12 @@ autoinstall:
         path: /dev/nvme0n1
       password: 'Senha2024'
   
-  # CONFIGURAÇÕES DE SISTEMA
+  # CONFIGURAÇÕES DE SISTEMA BÁSICAS
   identity:
-    hostname: daniel_sammartano
-    username: Daniel.Sammartano
+    # hostname: Nome visível na rede, sem caracteres especiais é mais seguro
+    hostname: daniel-pc
+    # username: O nome de usuário a ser criado.
+    username: daniel.sammartano
     password: 'Senha2024'
     
   locale: pt_BR
@@ -33,11 +35,11 @@ autoinstall:
     - gnupg
     - lsb-release
     - wget
-    - libglib2.0-bin 
-    - hunspell-pt-br # Adicionado para completar a localização PT-BR
-    - wportuguese    # Adicionado para completar a localização PT-BR
-    - wpasupplicant  # Adicionado para completar a instalação de drivers
-
+    - libglib2.0-bin
+    - hunspell-pt-br
+    - wportuguese
+    - wpasupplicant
+    
   snaps:
     - name: spotify
       channel: stable
@@ -58,15 +60,7 @@ autoinstall:
     install: true
   updates: all
 
-  # COMANDOS DE PÓS-INSTALAÇÃO (ROOT)
+  # COMANDOS DE PÓS-INSTALAÇÃO (MÍNIMOS)
   late-commands:
-    # 1. Atualiza repositórios
-    - curtin in-target -- apt update
-    # 2. Atualiza pacotes instalados
-    - curtin in-target -- apt upgrade -y
-    # 3. CORREÇÃO: Adiciona o usuário ao grupo docker usando a formatação provável:
-    # (minúsculas e ponto substituído por underscore)
-    - curtin in-target -- usermod -aG docker daniel_sammartano
-    
-    # 4. AÇÃO FINAL: Reinicia o sistema (Movido para dentro dos comandos)
+    # AÇÃO FINAL: Reinicia o sistema
     - curtin in-target -- /sbin/reboot 5
