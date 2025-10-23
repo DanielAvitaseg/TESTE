@@ -55,12 +55,7 @@ autoinstall:
     - curtin in-target -- apt update
     - curtin in-target -- apt upgrade -y
 
-    # 2. Instalação do NVM (Node Version Manager)
-    # Executado como o novo usuário: daniel_sammartano
-    - curtin in-target -- su - daniel_sammartano -c 'curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash'
 
-    # 3. Configuração do Docker (adicionar o novo usuário ao grupo docker)
-    - curtin in-target -- usermod -aG docker daniel_sammartano
     
   power-state:
     delay: 5
