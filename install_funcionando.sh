@@ -25,8 +25,8 @@ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o 
 sudo chmod a+r /etc/apt/keyrings/docker.gpg
 VERSION_CODENAME=$(lsb_release -cs)
 echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-  $VERSION_CODENAME stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $VERSION_CODENAME stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 sudo apt update
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
@@ -36,7 +36,7 @@ sudo chmod +x /usr/local/bin/docker-compose
 
 sudo systemctl enable docker
 if ! grep -q "docker" /etc/group; then
-    sudo groupadd docker
+    sudo groupadd docker
 fi
 sudo usermod -aG docker "$USER"
 
@@ -56,8 +56,8 @@ export NVM_DIR="$HOME/.nvm"
 
 . "$HOME/.bashrc" 2>/dev/null || . "$HOME/.zshrc" 2>/dev/null
 if command -v nvm &> /dev/null; then
-    nvm install 18
-    nvm use 18
+    nvm install 18
+    nvm use 18
 fi
 
 # --- 6. INSTALAÇÃO DO POSTMAN ---
@@ -100,20 +100,20 @@ sudo apt install -y code
 
 echo "Instalando extensões do VS Code..."
 if command -v code &> /dev/null; then
-    EXTENSIONS=(
-        ms-dotnettools.vscode-dotnet-runtime
-        ms-dotnettools.csharp
-        Angular.ng-template
-        johnpapa.angular2
-        fernandoescolar.vscode-solution-explorer
-        esbenp.prettier-vscode
-        ms-dotnettools.vscodeintellicode-csharp
-        dbaeumer.vscode-eslint
-        rangav.vscode-thunder-client
-    )
-    for EXT in "${EXTENSIONS[@]}"; do
-        code --install-extension "$EXT" --force
-    done
+    EXTENSIONS=(
+        ms-dotnettools.vscode-dotnet-runtime
+        ms-dotnettools.csharp
+        Angular.ng-template
+        johnpapa.angular2
+        fernandoescolar.vscode-solution-explorer
+        esbenp.prettier-vscode
+        ms-dotnettools.vscodeintellicode-csharp
+        dbaeumer.vscode-eslint
+        rangav.vscode-thunder-client
+    )
+    for EXT in "${EXTENSIONS[@]}"; do
+        code --install-extension "$EXT" --force
+    done
 fi
 
 # --- 9. CONFIGURAÇÃO DE WALLPAPER ---
@@ -127,6 +127,66 @@ gsettings set org.gnome.desktop.background picture-uri "file://$HOME/Downloads/F
 gsettings set org.gnome.desktop.background picture-uri-dark "file://$HOME/Downloads/Frame-6.png"
 echo "Wallpaper configurado."
 
+# =================================================================
+# === NOVO BLOCO: REMOÇÃO DE DUPLICATAS (LIMPEZA PÓS-INSTALAÇÃO) ===
+# =================================================================
+
+echo ""
+echo "--- 🔟 INICIANDO LIMPEZA DE DUPLICATAS (Removendo versões Snap/Flatpak) ---"
+
+# Lista de aplicativos instalados via APT/DEB/Manual neste script que PODEM ter duplicatas Snap/Flatpak.
+DUPLICATES=(
+    "dbeaver-ce"
+    "postman"
+    "slack"
+    "code"
+)
+
+# --- Função de Remoção Snap ---
+remove_snap() {
+    local app_name=$1
+    if snap list | grep -w "$app_name" &> /dev/null; then
+        echo "   -> Removendo SNAP: $app_name (Duplicata)"
+        sudo snap remove "$app_name" --purge
+    fi
+}
+
+# --- Função de Remoção Flatpak (Requer Flatpak instalado para funcionar) ---
+remove_flatpak() {
+    local app_id=$1
+    if command -v flatpak &> /dev/null && flatpak list --app | grep -i "$app_id" &> /dev/null; then
+        echo "   -> Removendo FLATPAK: $app_id (Duplicata)"
+        # Adicione -y para aceitar a remoção automaticamente, se flatpak estiver instalado
+        flatpak remove "$app_id" -y &> /dev/null
+    fi
+}
+
+# --- Execução da Remoção ---
+
+for app in "${DUPLICATES[@]}"; do
+    case "$app" in
+        dbeaver-ce)
+            remove_snap "$app"
+            remove_flatpak "io.dbeaver.DBeaverCommunity"
+            ;;
+        postman)
+            remove_snap "$app"
+            remove_flatpak "com.getpostman.Postman"
+            ;;
+        slack)
+            remove_snap "$app"
+            remove_flatpak "com.slack.Slack"
+            ;;
+        code)
+            remove_snap "$app"
+            remove_flatpak "com.visualstudio.code"
+            ;;
+        # Nota: Docker e .NET Core não são incluídos, pois a duplicação do motor Docker é rara
+        # e o .NET Core é geralmente gerenciado por caminhos diferentes.
+    esac
+done
+
+echo "--- Limpeza de Duplicatas Concluída. ---"
 
 # =================================================================
 # === PARTE DE VERIFICAÇÃO AUTOMÁTICA ===============================
@@ -140,22 +200,22 @@ SEPARATOR="=================================================="
 
 # Função auxiliar para verificar comandos
 verify_command() {
-    local command_name="$1"
-    local verification_command="$2"
-    local expected_output_regex="$3"
+    local command_name="$1"
+    local verification_command="$2"
+    local expected_output_regex="$3"
 
-    echo -n "Verificando $command_name... "
-    if command -v "$command_name" &> /dev/null; then
-        output=$($verification_command 2>&1)
-        if [[ $output =~ $expected_output_regex ]]; then
-            echo "✅ [OK] (Versão: $(echo "$output" | head -n 1 | awk '{print $NF}'))"
-        else
-            echo "⚠️ [AVISO] Comando encontrado, mas a versão/saída não é clara."
-        fi
-    else
-        echo "❌ [FALHA] Comando não encontrado."
-        FAIL_COUNT=$((FAIL_COUNT + 1))
-    fi
+    echo -n "Verificando $command_name... "
+    if command -v "$command_name" &> /dev/null; then
+        output=$($verification_command 2>&1)
+        if [[ $output =~ $expected_output_regex ]]; then
+            echo "✅ [OK] (Versão: $(echo "$output" | head -n 1 | awk '{print $NF}'))"
+        else
+            echo "⚠️ [AVISO] Comando encontrado, mas a versão/saída não é clara."
+        fi
+    else
+        echo "❌ [FALHA] Comando não encontrado."
+        FAIL_COUNT=$((FAIL_COUNT + 1))
+    fi
 }
 
 # 1. DBeaver CE (Verificar existência do arquivo desktop)
@@ -163,14 +223,14 @@ echo "$SEPARATOR"
 DOCKER_DESKTOP_VERIFY="/usr/share/applications/dbeaver-ce.desktop"
 echo -n "Verificando DBeaver CE... "
 if [ -f "$DOCKER_DESKTOP_VERIFY" ]; then
-    echo "✅ [OK] (Atalho .desktop encontrado)"
+    echo "✅ [OK] (Atalho .desktop encontrado)"
 else
-    if [ -x "/usr/bin/dbeaver-ce" ]; then
-        echo "⚠️ [AVISO] Atalho não encontrado, mas executável DBeaver existe em /usr/bin/."
-    else
-        echo "❌ [FALHA] (Atalho ou Executável não encontrado.)"
-        FAIL_COUNT=$((FAIL_COUNT + 1))
-    fi
+    if [ -x "/usr/bin/dbeaver-ce" ]; then
+        echo "⚠️ [AVISO] Atalho não encontrado, mas executável DBeaver existe em /usr/bin/."
+    else
+        echo "❌ [FALHA] (Atalho ou Executável não encontrado.)"
+        FAIL_COUNT=$((FAIL_COUNT + 1))
+    fi
 fi
 
 # 2. Docker
@@ -185,16 +245,16 @@ echo "$SEPARATOR"
 DOTNET_PATH="$HOME/.dotnet/dotnet"
 echo -n "Verificando .NET SDK 6.0 (local)... "
 if [ -x "$DOTNET_PATH" ]; then
-    VERSION_OUTPUT=$("$DOTNET_PATH" --version 2>&1 | grep -E '^(6\.|7\.|8\.)')
-    if [ -n "$VERSION_OUTPUT" ]; then
-        echo "✅ [OK] (Versão: $VERSION_OUTPUT)"
-    else
-        echo "❌ [FALHA] Executável .NET encontrado, mas a versão 6.0+ não foi detectada."
-        FAIL_COUNT=$((FAIL_COUNT + 1))
-    fi
+    VERSION_OUTPUT=$("$DOTNET_PATH" --version 2>&1 | grep -E '^(6\.|7\.|8\.)')
+    if [ -n "$VERSION_OUTPUT" ]; then
+        echo "✅ [OK] (Versão: $VERSION_OUTPUT)"
+    else
+        echo "❌ [FALHA] Executável .NET encontrado, mas a versão 6.0+ não foi detectada."
+        FAIL_COUNT=$((FAIL_COUNT + 1))
+    fi
 else
-    echo "❌ [FALHA] Executável .NET não encontrado em $DOTNET_PATH."
-    FAIL_COUNT=$((FAIL_COUNT + 1))
+    echo "❌ [FALHA] Executável .NET não encontrado em $DOTNET_PATH."
+    FAIL_COUNT=$((FAIL_COUNT + 1))
 fi
 
 # 5. NVM e Node.js 18
@@ -202,20 +262,20 @@ echo "$SEPARATOR"
 NVM_DIR_CHECK="$HOME/.nvm/nvm.sh"
 echo -n "Verificando NVM... "
 if [ -f "$NVM_DIR_CHECK" ]; then
-    echo "✅ [OK] (Script nvm.sh encontrado)"
-    
-    export NVM_DIR="$HOME/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    echo "✅ [OK] (Script nvm.sh encontrado)"
+    
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
-    echo -n "Verificando Node.js 18... "
-    if command -v node &> /dev/null && [[ $(node -v 2>&1) =~ v18 ]]; then
-        echo "✅ [OK] (Versão: $(node -v 2>&1))"
-    else
-        echo "⚠️ [AVISO] Node (ou Node 18) pode não estar carregado. Use 'nvm use 18' em um novo terminal."
-    fi
+    echo -n "Verificando Node.js 18... "
+    if command -v node &> /dev/null && [[ $(node -v 2>&1) =~ v18 ]]; then
+        echo "✅ [OK] (Versão: $(node -v 2>&1))"
+    else
+        echo "⚠️ [AVISO] Node (ou Node 18) pode não estar carregado. Use 'nvm use 18' em um novo terminal."
+    fi
 else
-    echo "❌ [FALHA] NVM não encontrado."
-    FAIL_COUNT=$((FAIL_COUNT + 1))
+    echo "❌ [FALHA] NVM não encontrado."
+    FAIL_COUNT=$((FAIL_COUNT + 1))
 fi
 
 
@@ -225,10 +285,10 @@ POSTMAN_LINK="/usr/bin/postman"
 POSTMAN_DESKTOP_VERIFY="/usr/share/applications/postman.desktop"
 echo -n "Verificando Postman... "
 if [ -L "$POSTMAN_LINK" ] && [ -f "$POSTMAN_DESKTOP_VERIFY" ]; then
-    echo "✅ [OK] (Link e Atalho .desktop encontrados)"
+    echo "✅ [OK] (Link e Atalho .desktop encontrados)"
 else
-    echo "❌ [FALHA] Link ou Atalho .desktop não encontrado."
-    FAIL_COUNT=$((FAIL_COUNT + 1))
+    echo "❌ [FALHA] Link ou Atalho .desktop não encontrado."
+    FAIL_COUNT=$((FAIL_COUNT + 1))
 fi
 
 # 7. Slack
@@ -242,9 +302,9 @@ verify_command "code" "code --version" ".*"
 # Resumo Final
 echo "$SEPARATOR"
 if [ $FAIL_COUNT -eq 0 ]; then
-    echo "🎉 RESULTADO FINAL: Todas as verificações de comandos básicos foram bem-sucedidas."
+    echo "🎉 RESULTADO FINAL: Todas as verificações de comandos básicos foram bem-sucedidas."
 else
-    echo "⚠️ RESULTADO FINAL: $FAIL_COUNT falha(s) detectada(s). Verifique os programas com ❌."
+    echo "⚠️ RESULTADO FINAL: $FAIL_COUNT falha(s) detectada(s). Verifique os programas com ❌."
 fi
 echo "=================================================="
 
