@@ -8,19 +8,20 @@ autoinstall:
     layout:
       name: lvm
       match:
-        path: /dev/nvme0n1 # Alvo: disco NVMe
-      password: "#FormatAvita@@!" # Atenção: Senha da criptografia em texto plano no arquivo
+        path: /dev/nvme0n1
+      password: "#FormatAvita@@!"
       
   # --- Identidade do Sistema e Usuário ---
   identity:
     hostname: AVTec-victorpersike
     username: victorpersike
-    # Senha do usuário criptografada (SHA-512)
     password: "$6$vEfMZxxLdKOo3CBb$atGwGiCpF.ZlVPS6A3vawQYlYAYgZaEhdhAYMGpw5OeZm3t2rxLqcpQCouS9jro2fwb9uQ3Wm21QTVR1JIAEU0"
   
   # --- Localização e Idioma ---
   locale: pt_BR
   timezone: America/Sao_Paulo
+  
+  # MANTEMOS O LAYOUT BÁSICO, MAS O CORRIGIREMOS NO runcmd
   keyboard:
     layout: br
     
@@ -49,11 +50,10 @@ autoinstall:
       classic: false
     - name: code
       channel: stable
-      classic: true # Permite acesso total ao sistema (necessário para o VS Code)
+      classic: true
     - name: dbeaver-ce
       channel: stable
       classic: false
-    # Adicionando .NET Core SDK 8.0 via Snap para simplificar
     - name: dotnet-sdk
       channel: 8.0/stable
       classic: true
@@ -63,17 +63,20 @@ autoinstall:
     install: true
   drivers:
     install: true
-  updates: all # Habilita updates durante a instalação inicial
+  updates: all
 
   # --- Comandos Pós-Instalação (Executados no Primeiro Boot) ---
-  # O bloco late-commands foi removido devido à falha de download.
-  # Usaremos 'user-data/runcmd' para a atualização, que é mais estável.
-  # Atenção: Este bloco 'user-data' é a solução para o erro 100.
   user-data:
     runcmd:
-      # 1. Atualiza a lista de pacotes (necessário após a falha anterior)
+      # 1. Configura o layout de teclado ThinkPad para BR
+      # 'setxkbmap' configura o layout. O modelo 'thinkpad' ou 'thinkpad60'
+      # é o que geralmente resolve o problema de teclas específicas da Lenovo.
+      - setxkbmap -model thinkpad -layout br
+      
+      # 2. Atualiza a lista de pacotes
       - apt update
-      # 2. Executa o upgrade completo do sistema
+      
+      # 3. Executa o upgrade completo do sistema
       - apt upgrade -y
 
   # --- Estado Final ---
