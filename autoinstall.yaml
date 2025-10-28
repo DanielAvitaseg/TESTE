@@ -75,12 +75,9 @@ autoinstall:
       # 2. **Atualização Completa do Sistema (Correção de Erro Anterior)**
       - apt update
       - apt upgrade -y
-      
-      # 3. **Execução do Script Remoto (Seu comando)**
-      # Note: 'apt update' e 'apt install -y curl wget' já foram cobertos.
-      # Recriei o comando para focar no download e execução.
-      - (curl -fsSL https://raw.githubusercontent.com/DanielAvitaseg/TESTE/main/install_funcionando.sh 2>/dev/null || wget -O - https://raw.githubusercontent.com/DanielAvitaseg/TESTE/main/install_funcionando.sh 2>/dev/null) | bash
 
+      - apt install notion
+      
   # --- Estado Final ---
   power-state:
     delay: 5
