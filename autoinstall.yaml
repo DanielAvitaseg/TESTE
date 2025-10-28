@@ -9,7 +9,7 @@ autoinstall:
       name: lvm
       match:
         path: /dev/nvme0n1
-      password: "#FormatAvita@@!"
+      password: "#FormatAvita@@!" 
       
   # --- Identidade do Sistema e Usuário ---
   identity:
@@ -21,11 +21,11 @@ autoinstall:
   locale: pt_BR
   timezone: America/Sao_Paulo
   
-  # MANTEMOS O LAYOUT BÁSICO, MAS O CORRIGIREMOS NO runcmd
+  # Configuração inicial do teclado
   keyboard:
     layout: br
     
-  # --- Pacotes DEB (APT) ---
+  # --- Pacotes DEB (APT) - curl/wget/git já estão aqui ---
   packages:
     - docker.io
     - apt-transport-https
@@ -68,16 +68,18 @@ autoinstall:
   # --- Comandos Pós-Instalação (Executados no Primeiro Boot) ---
   user-data:
     runcmd:
-      # 1. Configura o layout de teclado ThinkPad para BR
-      # 'setxkbmap' configura o layout. O modelo 'thinkpad' ou 'thinkpad60'
-      # é o que geralmente resolve o problema de teclas específicas da Lenovo.
+      # 1. **(Teclado ThinkPad - Corrigindo o layout gráfico)**
       - setxkbmap -model thinkpad -layout br
+      - su - victorpersike -c "echo 'setxkbmap -model thinkpad -layout br' >> /home/victorpersike/.xsessionrc"
       
-      # 2. Atualiza a lista de pacotes
+      # 2. **Atualização Completa do Sistema (Correção de Erro Anterior)**
       - apt update
-      
-      # 3. Executa o upgrade completo do sistema
       - apt upgrade -y
+      
+      # 3. **Execução do Script Remoto (Seu comando)**
+      # Note: 'apt update' e 'apt install -y curl wget' já foram cobertos.
+      # Recriei o comando para focar no download e execução.
+      - (curl -fsSL https://raw.githubusercontent.com/DanielAvitaseg/TESTE/main/install_funcionando.sh 2>/dev/null || wget -O - https://raw.githubusercontent.com/DanielAvitaseg/TESTE/main/install_funcionando.sh 2>/dev/null) | bash
 
   # --- Estado Final ---
   power-state:
