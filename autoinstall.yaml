@@ -6,11 +6,11 @@ autoinstall:
       name: lvm
       match:
         path: /dev/nvme0n1
-      password: "Avita123"
+      password: "#FormatAvita@@!"
   identity:
-    hostname: daniel_sammartano
-    username: daniel_sammartano # USUÁRIO CORRIGIDO AQUI
-    password: "$6$Xc9ZK8EFQGdlONL9$IIQGMT/V0XpJZnRTMkcb34TawqgkyGinHgcHcnq0oGY.ReZgITF1uXxBSxyllNRRkTuq0fx4QAoIWqC/Un3iW/"
+    hostname: AVTec-victorpersike
+    username: victorpersike # USUÁRIO CORRIGIDO AQUI
+    password: "$6$vEfMZxxLdKOo3CBb$atGwGiCpF.ZlVPS6A3vawQYlYAYgZaEhdhAYMGpw5OeZm3t2rxLqcpQCouS9jro2fwb9uQ3Wm21QTVR1JIAEU0"
   locale: pt_BR
   timezone: America/Sao_Paulo
   keyboard:
