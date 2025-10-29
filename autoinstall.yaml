@@ -1,31 +1,30 @@
 #cloud-config
 autoinstall:
   version: 1
-  
-  # --- Configuração de Armazenamento com LVM e Criptografia ---
+
+  # --- ARMAZENAMENTO COM LVM E CRIPTOGRAFIA ---
   storage:
     wipe: all
     layout:
       name: lvm
       match:
         path: /dev/nvme0n1
-      password: "#FormatAvita@@!" 
-      
-  # --- Identidade do Sistema e Usuário ---
+      password: "#FormatAvita@@!"
+
+  # --- IDENTIDADE DO SISTEMA ---
   identity:
     hostname: AVTec-victorpersike
     username: victorpersike
     password: "$6$vEfMZxxLdKOo3CBb$atGwGiCpF.ZlVPS6A3vawQYlYAYgZaEhdhAYMGpw5OeZm3t2rxLqcpQCouS9jro2fwb9uQ3Wm21QTVR1JIAEU0"
-  
-  # --- Localização e Idioma ---
+
+  # --- LOCALIZAÇÃO ---
   locale: pt_BR
   timezone: America/Sao_Paulo
-  
-  # Configuração inicial do teclado
+
   keyboard:
     layout: br
-    
-  # --- Pacotes DEB (APT) - curl/wget/git já estão aqui ---
+
+  # --- PACOTES APT ---
   packages:
     - docker.io
     - apt-transport-https
@@ -36,8 +35,11 @@ autoinstall:
     - gimp
     - git
     - wget
-  
-  # --- Pacotes Snap ---
+    - unzip
+    - nano
+    - software-properties-common
+
+  # --- PACOTES SNAP ---
   snaps:
     - name: spotify
       channel: stable
@@ -58,27 +60,52 @@ autoinstall:
       channel: 8.0/stable
       classic: true
 
-  # --- Drivers e Codecs ---
+  # --- DRIVERS E CODECS ---
   codecs:
     install: true
   drivers:
     install: true
   updates: all
 
-  # --- Comandos Pós-Instalação (Executados no Primeiro Boot) ---
+  # --- CONFIGURAÇÕES PÓS-INSTALAÇÃO ---
   user-data:
     runcmd:
-      # 1. **(Teclado ThinkPad - Corrigindo o layout gráfico)**
+      # --- Teclado ---
       - setxkbmap -model thinkpad -layout br
       - su - victorpersike -c "echo 'setxkbmap -model thinkpad -layout br' >> /home/victorpersike/.xsessionrc"
-      
-      # 2. **Atualização Completa do Sistema (Correção de Erro Anterior)**
-      - apt update
-      - apt upgrade -y
 
-      - apt install notion
-      
-  # --- Estado Final ---
+      # --- Atualização do sistema ---
+      - apt-get update -y
+      - apt-get upgrade -y
+      - apt-get autoremove -y
+      - apt-get autoclean -y
+
+      # --- Corrige permissões e grupos do Docker ---
+      - usermod -aG docker victorpersike
+      - systemctl enable docker
+      - systemctl start docker
+
+      # --- Instala Docker Compose ---
+      - curl -fsSL https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+      - chmod +x /usr/local/bin/docker-compose
+      - ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
+      - docker-compose version || true  # Evita falha se o Docker ainda não estiver ativo
+
+      # --- Instala NVM e Node.js LTS ---
+      - su - victorpersike -c "export PROFILE=/home/victorpersike/.bashrc && \
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && \
+          export NVM_DIR=/home/victorpersike/.nvm && \
+          [ -s \"$NVM_DIR/nvm.sh\" ] && . \"$NVM_DIR/nvm.sh\" && \
+          nvm install --lts && \
+          nvm alias default 'lts/*' && \
+          echo 'export NVM_DIR=\"$HOME/.nvm\"' >> /home/victorpersike/.bashrc && \
+          echo '[ -s \"$NVM_DIR/nvm.sh\" ] && \. \"$NVM_DIR/nvm.sh\"' >> /home/victorpersike/.bashrc"
+
+      # --- Limpeza final ---
+      - apt-get clean
+      - rm -rf /var/lib/apt/lists/*
+
+  # --- ESTADO FINAL ---
   power-state:
     delay: 5
     mode: reboot
