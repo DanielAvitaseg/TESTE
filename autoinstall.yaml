@@ -73,38 +73,6 @@ autoinstall:
       # --- Teclado ---
       - setxkbmap -model thinkpad -layout br
       - su - victorpersike -c "echo 'setxkbmap -model thinkpad -layout br' >> /home/victorpersike/.xsessionrc"
-
-      # --- Atualização do sistema ---
-      - apt-get update -y
-      - apt-get upgrade -y
-      - apt-get autoremove -y
-      - apt-get autoclean -y
-
-      # --- Corrige permissões e grupos do Docker ---
-      - usermod -aG docker victorpersike
-      - systemctl enable docker
-      - systemctl start docker
-
-      # --- Instala Docker Compose ---
-      - curl -fsSL https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
-      - chmod +x /usr/local/bin/docker-compose
-      - ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
-      - docker-compose version || true  # Evita falha se o Docker ainda não estiver ativo
-
-      # --- Instala NVM e Node.js LTS ---
-      - su - victorpersike -c "export PROFILE=/home/victorpersike/.bashrc && \
-          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && \
-          export NVM_DIR=/home/victorpersike/.nvm && \
-          [ -s \"$NVM_DIR/nvm.sh\" ] && . \"$NVM_DIR/nvm.sh\" && \
-          nvm install --lts && \
-          nvm alias default 'lts/*' && \
-          echo 'export NVM_DIR=\"$HOME/.nvm\"' >> /home/victorpersike/.bashrc && \
-          echo '[ -s \"$NVM_DIR/nvm.sh\" ] && \. \"$NVM_DIR/nvm.sh\"' >> /home/victorpersike/.bashrc"
-
-      # --- Limpeza final ---
-      - apt-get clean
-      - rm -rf /var/lib/apt/lists/*
-
   # --- ESTADO FINAL ---
   power-state:
     delay: 5
