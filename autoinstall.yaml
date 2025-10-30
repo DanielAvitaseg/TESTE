@@ -70,7 +70,7 @@ autoinstall:
   # --- CONFIGURAÇÕES PÓS-INSTALAÇÃO ---
   user-data:
     runcmd:
-     - sudo apt update && sudo apt upgrade -y
+     - DEBIAN_FRONTEND=noninteractive apt update -y && DEBIAN_FRONTEND=noninteractive apt upgrade -y
      - setxkbmap -model thinkpad -layout br
      - su - rodrigomesquita -c "echo 'setxkbmap -model thinkpad -layout br' >> ~/.xsessionrc"
      - su - rodrigomesquita -c "curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash && source ~/.nvm/nvm.sh && nvm install 18 && nvm use 18"
