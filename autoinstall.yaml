@@ -13,9 +13,9 @@ autoinstall:
 
   # --- IDENTIDADE DO SISTEMA ---
   identity:
-    hostname: AVTec-victorpersike
-    username: victorpersike
-    password: "$6$vEfMZxxLdKOo3CBb$atGwGiCpF.ZlVPS6A3vawQYlYAYgZaEhdhAYMGpw5OeZm3t2rxLqcpQCouS9jro2fwb9uQ3Wm21QTVR1JIAEU0"
+    hostname: AVTec-rodrigomesquita
+    username: rodrigomesquita
+    password: "$6$zS3mqBECxkp6I5o7$QUva55pXxwOjHd3m8s2aJhz9NjpwLRXo24z.46LRPTmcKlovKqbYMFSCSRSMey2mpSO3h.mGjJIV2iltWccxS/"  #Avita123
 
   # --- LOCALIZAÇÃO ---
   locale: pt_BR
@@ -70,11 +70,10 @@ autoinstall:
   # --- CONFIGURAÇÕES PÓS-INSTALAÇÃO ---
   user-data:
     runcmd:
-      # --- Teclado ---
-      - setxkbmap -model thinkpad -layout br
-      - su - victorpersike -c "echo 'setxkbmap -model thinkpad -layout br' >> /home/victorpersike/.xsessionrc"
-      - curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash && . "$HOME/.nvm/nvm.sh" && nvm install 18 && nvm use 18
-      - sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && sudo chmod +x /usr/local/bin/docker-compose && docker-compose --version
+     - setxkbmap -model thinkpad -layout br
+     - su - victorpersike -c "echo 'setxkbmap -model thinkpad -layout br' >> ~/.xsessionrc"
+     - bash -c "curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash && . ~/.nvm/nvm.sh && nvm install 18 && nvm use 18"
+     - bash -c "sudo curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose && sudo chmod +x /usr/local/bin/docker-compose && docker-compose --version"
 
   # --- ESTADO FINAL ---
   power-state:
