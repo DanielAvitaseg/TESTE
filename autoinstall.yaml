@@ -71,7 +71,7 @@ autoinstall:
   user-data:
     runcmd:
      - setxkbmap -model thinkpad -layout br
-     - su - victorpersike -c "echo 'setxkbmap -model thinkpad -layout br' >> ~/.xsessionrc"
+     - su - rodrigomesquita -c "echo 'setxkbmap -model thinkpad -layout br' >> ~/.xsessionrc"
      - bash -c "curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.4/install.sh | bash && . ~/.nvm/nvm.sh && nvm install 18 && nvm use 18"
      - bash -c "sudo curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose && sudo chmod +x /usr/local/bin/docker-compose && docker-compose --version"
 
