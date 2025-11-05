@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-UBUNTU_CODENAME=$(grep UBUNTU_CODENAME /etc/os-release | cut -d'=' -f2)
+# Confere se é root
+if [[ $EUID -ne 0 ]]; then
+  echo "Execute como root: sudo $0"
+  exit 1
+fi
+
+# Detecta codename correto no Linux Mint (base Ubuntu)
+UBUNTU_CODENAME=$(lsb_release -sc)
 ARCH=$(dpkg --print-architecture)
 
 echo "Atualizando pacotes..."
@@ -20,7 +27,7 @@ echo "deb [arch=$ARCH signed-by=/etc/apt/keyrings/docker.gpg] https://download.d
   > /etc/apt/sources.list.d/docker.list
 
 # -------------------------
-# VS Code (fix definitivo)
+# VS Code
 # -------------------------
 echo "Reset VS Code..."
 rm -f /etc/apt/sources.list.d/vscode.list
@@ -40,7 +47,6 @@ echo "deb [arch=$ARCH signed-by=/etc/apt/keyrings/microsoft.gpg] https://package
 # -------------------------
 # DBeaver CE
 # -------------------------
-echo "Config DBeaver..."
 curl -fsSL https://dbeaver.io/debs/dbeaver.gpg.key | gpg --dearmor > /etc/apt/keyrings/dbeaver.gpg
 chmod 644 /etc/apt/keyrings/dbeaver.gpg
 
@@ -57,9 +63,17 @@ apt install -y docker-ce docker-ce-cli docker-compose-plugin code dbeaver-ce
 # -------------------------
 # Grupo docker
 # -------------------------
-if ! groups "$SUDO_USER" | grep -q docker; then
+if [[ -n "${SUDO_USER:-}" ]] && ! groups "$SUDO_USER" | grep -q docker; then
   usermod -aG docker "$SUDO_USER"
   echo "Usuário adicionado ao grupo docker. Re-login necessário."
 fi
+
+# -------------------------
+# Wallpaper no Linux Mint (Cinnamon)
+# -------------------------
+su - rodrigomesquita -c "mkdir -p ~/Imagens && \
+wget -O ~/Imagens/novo-wallpaper.png https://i.ibb.co/pjFjN4hS/Novos-colaboradores-2-2.png && \
+gsettings set org.cinnamon.desktop.background picture-uri 'file:///home/rodrigomesquita/Imagens/novo-wallpaper.png' && \
+gsettings set org.cinnamon.desktop.background picture-options 'zoom'"
 
 echo "Concluído."
