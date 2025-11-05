@@ -20,14 +20,14 @@ echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packa
 # Repositório .NET/.NET Core (usando o do Ubuntu 22.04 LTS, que é a base recente do Mint)
 source /etc/os-release
 if [[ "$VERSION_ID" == "21" ]]; then
-    # Baseado em Ubuntu 22.04
-    OS_VERSION="ubuntu/22.04"
+    # Baseado em Ubuntu 22.04
+    OS_VERSION="ubuntu/22.04"
 elif [[ "$VERSION_ID" == "20" ]]; then
-    # Baseado em Ubuntu 20.04
-    OS_VERSION="ubuntu/20.04"
+    # Baseado em Ubuntu 20.04
+    OS_VERSION="ubuntu/20.04"
 else
-    # Tentativa de versão genérica ou baseada em 22.04
-    OS_VERSION="ubuntu/22.04"
+    # Tentativa de versão genérica ou baseada em 22.04
+    OS_VERSION="ubuntu/22.04"
 fi
 echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/microsoft-ubuntu-${OS_VERSION/ubuntu\//} prod main" | sudo tee /etc/apt/sources.list.d/microsoft-prod.list > /dev/null
 
@@ -76,15 +76,15 @@ curl -o- "$NVM_INSTALLER_URL" | bash
 # Adicionar linhas de carregamento do NVM aos arquivos de shell (se não existirem)
 PROFILE_FILE="$HOME/.bashrc"
 if [ -n "$ZSH_VERSION" ]; then
-    PROFILE_FILE="$HOME/.zshrc"
+    PROFILE_FILE="$HOME/.zshrc"
 fi
 
 if ! grep -q 'NVM_DIR' "$PROFILE_FILE"; then
-    echo "" >> "$PROFILE_FILE"
-    echo "# Configuração do NVM adicionada pelo script de instalação" >> "$PROFILE_FILE"
-    echo "export NVM_DIR=\"$HOME/.nvm\"" >> "$PROFILE_FILE"
-    echo "[ -s \"\$NVM_DIR/nvm.sh\" ] && \\. \"\$NVM_DIR/nvm.sh\"  # This loads nvm" >> "$PROFILE_FILE"
-    echo "[ -s \"\$NVM_DIR/bash_completion\" ] && \\. \"\$NVM_DIR/bash_completion\"  # This loads nvm bash_completion" >> "$PROFILE_FILE"
+    echo "" >> "$PROFILE_FILE"
+    echo "# Configuração do NVM adicionada pelo script de instalação" >> "$PROFILE_FILE"
+    echo "export NVM_DIR=\"$HOME/.nvm\"" >> "$PROFILE_FILE"
+    echo "[ -s \"\$NVM_DIR/nvm.sh\" ] && \\. \"\$NVM_DIR/nvm.sh\"  # This loads nvm" >> "$PROFILE_FILE"
+    echo "[ -s \"\$NVM_DIR/bash_completion\" ] && \\. \"\$NVM_DIR/bash_completion\"  # This loads nvm bash_completion" >> "$PROFILE_FILE"
 fi
 
 echo ">> NVM instalado. **Você DEVE reabrir seu terminal ou rodar 'source $PROFILE_FILE' para usar o comando 'nvm'.**"
@@ -101,20 +101,20 @@ WALLPAPER_PATH="$HOME/Imagens/$WALLPAPER_NAME"
 # Alternativamente, se você já tiver o arquivo na pasta Downloads
 DOWNLOADS_PATH="$HOME/Downloads/$WALLPAPER_NAME"
 if [ -f "$DOWNLOADS_PATH" ]; then
-    cp "$DOWNLOADS_PATH" "$WALLPAPER_PATH"
-    echo "Papel de parede copiado da pasta Downloads."
+    cp "$DOWNLOADS_PATH" "$WALLPAPER_PATH"
+    echo "Papel de parede copiado da pasta Downloads."
 elif [ ! -f "$WALLPAPER_PATH" ]; then
-    # Se você não tiver o link direto, o script não conseguirá baixar automaticamente
-    echo "ERRO: Não foi possível encontrar o papel de parede em $DOWNLOADS_PATH e o link direto não foi fornecido."
-    echo "Por favor, baixe 'Novos-colaboradores-2-2.png' manualmente para $HOME/Imagens/ e configure-o."
+    # Se você não tiver o link direto, o script não conseguirá baixar automaticamente
+    echo "ERRO: Não foi possível encontrar o papel de parede em $DOWNLOADS_PATH e o link direto não foi fornecido."
+    echo "Por favor, baixe 'Novos-colaboradores-2-2.png' manualmente para $HOME/Imagens/ e configure-o."
 fi
 
 # Configurar o papel de parede (comando dconf/gsettings é o padrão para Mint/Cinnamon)
 if [ -f "$WALLPAPER_PATH" ]; then
-    # Tenta definir o papel de parede no Mint (Cinnamon/Gnome based)
-    gsettings set org.gnome.desktop.background picture-uri "file://$WALLPAPER_PATH"
-    gsettings set org.gnome.desktop.background picture-options 'zoom' # ou 'scaled'
-    echo "Papel de parede configurado (pode precisar reiniciar a sessão para ver a mudança)."
+    # Tenta definir o papel de parede no Mint (Cinnamon/Gnome based)
+    gsettings set org.gnome.desktop.background picture-uri "file://$WALLPAPER_PATH"
+    gsettings set org.gnome.desktop.background picture-options 'zoom' # ou 'scaled'
+    echo "Papel de parede configurado (pode precisar reiniciar a sessão para ver a mudança)."
 fi
 
 # --- Fim do Script ---
