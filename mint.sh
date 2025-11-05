@@ -1,108 +1,65 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-# Define a função de tratamento de erro
-function error_check {
-    if [ $? -ne 0 ]; then
-        echo -e "\n🚨 ERRO: Falha na última execução. Saindo do script."
-        exit 1
-    fi
-}
+UBUNTU_CODENAME=$(grep UBUNTU_CODENAME /etc/os-release | cut -d'=' -f2)
+ARCH=$(dpkg --print-architecture)
 
-echo "=================================================="
-echo "      🚀 Iniciando Configuração do Ambiente 🚀     "
-echo "=================================================="
+echo "Atualizando pacotes..."
+apt update -y
+apt install -y ca-certificates curl gnupg apt-transport-https lsb-release software-properties-common
 
-# Variáveis
-# O codinome 'noble' (Ubuntu 24.04) não é amplamente suportado ainda por repositórios de terceiros.
-# Usamos 'jammy' como fallback seguro para repositórios como o do VS Code.
-UBUNTU_CODENAME_FALLBACK="jammy"
-UBUNTU_CODENAME_CURRENT=$(lsb_release -cs 2>/dev/null || echo "noble") # Tenta pegar o codinome, usa 'noble' como padrão
+# -------------------------
+# Docker
+# -------------------------
+echo "Config Docker..."
+mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor > /etc/apt/keyrings/docker.gpg
+chmod 644 /etc/apt/keyrings/docker.gpg
 
-# --- [1/5] Atualizando e instalando dependências essenciais ---
-echo -e "\n--- [1/5] Atualizando e instalando dependências essenciais ---"
-apt update
-error_check
-apt upgrade -y
-error_check
-# Garante que as dependências necessárias estejam instaladas
-apt install -y wget gpg apt-transport-https ca-certificates curl software-properties-common lsb-release
-error_check
+echo "deb [arch=$ARCH signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $UBUNTU_CODENAME stable" \
+  > /etc/apt/sources.list.d/docker.list
 
-# --- [2/5] Configurando Repositórios (Microsoft e DBeaver) ---
-echo -e "\n--- [2/5] Configurando Repositórios (Microsoft e DBeaver) ---"
+# -------------------------
+# VS Code (fix definitivo)
+# -------------------------
+echo "Reset VS Code..."
+rm -f /etc/apt/sources.list.d/vscode.list
+rm -f /etc/apt/sources.list.d/code.list
+rm -f /etc/apt/sources.list.d/*microsoft*.list
+rm -f /etc/apt/trusted.gpg.d/microsoft.gpg
+rm -f /usr/share/keyrings/microsoft.gpg
+rm -f /etc/apt/keyrings/microsoft.gpg
 
-# 2.1 Repositório da Microsoft (VS Code)
-echo "Adicionando Repositório da Microsoft..."
-curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft.gpg
-error_check
-# Força o uso do codinome de fallback ('jammy') para evitar o erro 'noble'
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/vscode stable ${UBUNTU_CODENAME_FALLBACK}" | tee /etc/apt/sources.list.d/vscode.list > /dev/null
-error_check
+mkdir -p /etc/apt/keyrings
+curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /etc/apt/keyrings/microsoft.gpg
+chmod 644 /etc/apt/keyrings/microsoft.gpg
 
-# 2.2 Repositório DBeaver
-echo "Adicionando Repositório DBeaver..."
-# CORREÇÃO DA URL: A URL da chave GPG do DBeaver foi atualizada (de 'dbeaver.gpg' para 'dbeaver-archive.gpg')
-curl -fsSL https://dbeaver.io/debs/dbeaver-archive.gpg | gpg --dearmor -o /usr/share/keyrings/dbeaver.gpg
-error_check
-echo "deb [signed-by=/usr/share/keyrings/dbeaver.gpg] https://dbeaver.io/debs/dbeaver-ce/ /" | tee /etc/apt/sources.list.d/dbeaver.list > /dev/null
-error_check
+echo "deb [arch=$ARCH signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main" \
+  > /etc/apt/sources.list.d/vscode.list
 
-# Atualiza novamente a lista de pacotes para incluir os novos repositórios
-echo "Atualizando lista de pacotes..."
-apt update
-error_check
+# -------------------------
+# DBeaver CE
+# -------------------------
+echo "Config DBeaver..."
+curl -fsSL https://dbeaver.io/debs/dbeaver.gpg.key | gpg --dearmor > /etc/apt/keyrings/dbeaver.gpg
+chmod 644 /etc/apt/keyrings/dbeaver.gpg
 
+echo "deb [arch=$ARCH signed-by=/etc/apt/keyrings/dbeaver.gpg] https://dbeaver.io/debs/dbeaver-ce /" \
+  > /etc/apt/sources.list.d/dbeaver.list
 
-# --- [3/5] Instalando Docker Engine ---
-echo -e "\n--- [3/5] Instalando Docker Engine ---"
+# -------------------------
+# Instalação
+# -------------------------
+echo "Instalando pacotes..."
+apt update -y
+apt install -y docker-ce docker-ce-cli docker-compose-plugin code dbeaver-ce
 
-# Limpa instalações antigas
-for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; do apt remove $pkg -y > /dev/null 2>&1; done
-
-# Adiciona a chave GPG do Docker
-echo "Adicionando chave GPG do Docker..."
-install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-chmod a+r /etc/apt/keyrings/docker.gpg
-error_check
-
-# Adiciona o repositório do Docker (geralmente suporta o codinome mais recente)
-echo "Configurando Repositório do Docker..."
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-  $UBUNTU_CODENAME_CURRENT stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-error_check
-
-# Instala Docker e dependências
-apt update
-error_check
-apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-error_check
-
-
-# --- [4/5] Instalando Softwares (VS Code e DBeaver) ---
-echo -e "\n--- [4/5] Instalando VS Code e DBeaver ---"
-apt install -y code dbeaver-ce
-error_check
-
-
-# --- [5/5] Pós-Instalação e Verificação ---
-echo -e "\n--- [5/5] Pós-Instalação e Verificação ---"
-
-# Adiciona o usuário 'ubuntu' ao grupo docker (se existir)
-if id -u ubuntu >/dev/null 2>&1; then
-    echo "Adicionando usuário 'ubuntu' ao grupo docker..."
-    usermod -aG docker ubuntu
+# -------------------------
+# Grupo docker
+# -------------------------
+if ! groups "$SUDO_USER" | grep -q docker; then
+  usermod -aG docker "$SUDO_USER"
+  echo "Usuário adicionado ao grupo docker. Re-login necessário."
 fi
 
-# Verifica as versões instaladas
-echo "Versão do Docker:"
-docker --version
-echo "Verificação do VS Code (pacote 'code'):"
-dpkg -l | grep code | grep "ii"
-echo "Verificação do DBeaver (pacote 'dbeaver-ce'):"
-dpkg -l | grep dbeaver-ce | grep "ii"
-
-echo "=================================================="
-echo "✅ Configuração concluída com sucesso! ✅"
-echo "=================================================="
+echo "Concluído."
